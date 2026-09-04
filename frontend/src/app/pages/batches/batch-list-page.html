@@ -1,0 +1,75 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Generation</p>
+      <h1>Coupon batches</h1>
+    </div>
+    <a class="button primary" routerLink="/coupon-batches/new">New batch</a>
+  </header>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load(0)">
+    <label>
+      RMS coupon ID
+      <input formControlName="rmsCouponId" type="search" />
+    </label>
+    <label>
+      Program code
+      <input formControlName="couponProgramCode" maxlength="4" inputmode="numeric" />
+    </label>
+    <label>
+      Status
+      <select formControlName="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+    <button class="button" type="submit">Filter</button>
+  </form>
+
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Loading batches…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (page(); as data) {
+    @if (data.content.length === 0) {
+      <p class="empty">No batches match the current filters.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Created</th>
+              <th>RMS coupon</th>
+              <th>Program</th>
+              <th>Quantity</th>
+              <th>Window</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (batch of data.content; track batch.id) {
+              <tr>
+                <td>{{ batch.createdAt | date: 'medium' }}</td>
+                <td>
+                  <a [routerLink]="['/coupon-batches', batch.id]">{{ batch.rmsCouponId }}</a>
+                  <div class="muted">{{ batch.rmsCouponName }}</div>
+                </td>
+                <td><code>{{ batch.couponProgramCode }}</code></td>
+                <td>{{ batch.generatedQuantity }} / {{ batch.requestedQuantity }}</td>
+                <td>{{ batch.startAt | date: 'short' }} – {{ batch.expiresAt | date: 'short' }}</td>
+                <td><span class="badge">{{ batch.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button class="button" type="button" [disabled]="data.first" (click)="load(currentPage() - 1)">Previous</button>
+        <span>Page {{ data.page + 1 }} of {{ data.totalPages || 1 }}</span>
+        <button class="button" type="button" [disabled]="data.last" (click)="load(currentPage() + 1)">Next</button>
+      </div>
+    }
+  }
+</section>

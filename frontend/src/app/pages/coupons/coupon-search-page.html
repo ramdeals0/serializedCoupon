@@ -1,0 +1,83 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Lookup</p>
+      <h1>Serialized coupons</h1>
+    </div>
+  </header>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load(0)">
+    <label>
+      Coupon code
+      <input formControlName="query" type="search" placeholder="Full or partial code" />
+    </label>
+    <label>
+      RMS coupon ID
+      <input formControlName="rmsCouponId" />
+    </label>
+    <label>
+      Program code
+      <input formControlName="couponProgramCode" maxlength="4" inputmode="numeric" />
+    </label>
+    <label>
+      Batch ID
+      <input formControlName="batchId" />
+    </label>
+    <label>
+      Status
+      <select formControlName="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Valid at
+      <input formControlName="validAt" type="datetime-local" />
+    </label>
+    <button class="button" type="submit">Search</button>
+  </form>
+
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Searching coupons…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (page(); as data) {
+    @if (data.content.length === 0) {
+      <p class="empty">No coupons matched those filters.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>RMS</th>
+              <th>Program</th>
+              <th>Status</th>
+              <th>Expires</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (coupon of data.content; track coupon.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/serialized-coupons', coupon.couponCode]"><code>{{ coupon.couponCode }}</code></a>
+                </td>
+                <td>{{ coupon.rmsCouponId }}</td>
+                <td><code>{{ coupon.couponProgramCode }}</code></td>
+                <td><span class="badge">{{ coupon.status }}</span></td>
+                <td>{{ coupon.expiresAt | date: 'medium' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button class="button" type="button" [disabled]="data.first" (click)="load(currentPage() - 1)">Previous</button>
+        <span>Page {{ data.page + 1 }} of {{ data.totalPages || 1 }}</span>
+        <button class="button" type="button" [disabled]="data.last" (click)="load(currentPage() + 1)">Next</button>
+      </div>
+    }
+  }
+</section>

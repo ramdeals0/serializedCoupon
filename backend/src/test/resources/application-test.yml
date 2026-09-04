@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:serialized_coupon_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+app:
+  rms:
+    client: mock
+  coupon:
+    generation:
+      max-batch-size: 50
+      collision-retry-limit: 5
+      persistence-chunk-size: 10
+      sample-size: 25
+    validation:
+      require-live-rms-active: true

@@ -1,0 +1,16 @@
+.git
+.gitignore
+**/.angular
+**/node_modules
+**/dist
+**/target
+**/data
+backend/data
+.mvn-tmp
+**/*.log
+frontend/.vscode
+docs
+README.md
+.env
+.env.*
+!.env.example

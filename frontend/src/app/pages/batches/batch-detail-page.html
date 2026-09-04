@@ -1,0 +1,97 @@
+<section class="page">
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Loading batch…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (batch(); as data) {
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Batch {{ data.id }}</p>
+        <h1>{{ data.rmsCouponName }}</h1>
+      </div>
+      <button class="button" type="button" (click)="exportCsv()" [disabled]="exporting()">
+        {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+      </button>
+    </header>
+
+    <dl class="meta-grid">
+      <div><dt>RMS coupon</dt><dd>{{ data.rmsCouponId }} / {{ data.rmsCouponCode || '—' }}</dd></div>
+      <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
+      <div><dt>Generated</dt><dd>{{ data.generatedQuantity }} / {{ data.requestedQuantity }}</dd></div>
+      <div><dt>Status</dt><dd><span class="badge">{{ data.status }}</span></dd></div>
+      <div><dt>Start</dt><dd>{{ data.startAt | date: 'medium' }}</dd></div>
+      <div><dt>Expires</dt><dd>{{ data.expiresAt | date: 'medium' }}</dd></div>
+      <div><dt>External reference</dt><dd>{{ data.externalReference || '—' }}</dd></div>
+    </dl>
+
+    <h2>Sample codes</h2>
+    @if (data.sampleCouponCodes.length === 0) {
+      <p class="empty">No sample codes are available for this batch.</p>
+    } @else {
+      <ul class="code-list">
+        @for (code of data.sampleCouponCodes; track code) {
+          <li><code>{{ code }}</code></li>
+        }
+      </ul>
+    }
+
+    <h2>Coupons</h2>
+    <form class="filters" [formGroup]="couponFilters" (ngSubmit)="loadCoupons(0)">
+      <label>
+        Coupon code
+        <input formControlName="query" type="search" />
+      </label>
+      <label>
+        Status
+        <select formControlName="status">
+          <option value="">All</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </label>
+      <button class="button" type="submit">Filter</button>
+    </form>
+
+    @if (coupons(); as page) {
+      @if (page.content.length === 0) {
+        <p class="empty">No coupons match the current filters.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Coupon code</th>
+                <th>Status</th>
+                <th>Window</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (coupon of page.content; track coupon.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/serialized-coupons', coupon.couponCode]"><code>{{ coupon.couponCode }}</code></a>
+                  </td>
+                  <td><span class="badge">{{ coupon.status }}</span></td>
+                  <td>{{ coupon.startAt | date: 'short' }} – {{ coupon.expiresAt | date: 'short' }}</td>
+                  <td class="actions">
+                    <button class="button" type="button" (click)="copyCode(coupon.couponCode)">Copy</button>
+                    @if (canDeactivate(coupon)) {
+                      <button class="button danger" type="button" (click)="deactivate(coupon.couponCode)">Deactivate</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button class="button" type="button" [disabled]="page.first" (click)="loadCoupons(couponPage() - 1)">Previous</button>
+          <span>Page {{ page.page + 1 }} of {{ page.totalPages || 1 }}</span>
+          <button class="button" type="button" [disabled]="page.last" (click)="loadCoupons(couponPage() + 1)">Next</button>
+        </div>
+      }
+    }
+  }
+</section>
