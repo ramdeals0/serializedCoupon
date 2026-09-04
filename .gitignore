@@ -1,0 +1,43 @@
+# Build
+**/target/
+**/dist/
+**/.angular/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Node
+**/node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+**/application-secret.yml
+**/application-prod.yml
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Railway local link metadata
+.railway/
+.mvn-tmp/
+
+backend/data/
+
+# Logs
+*.log
+logs/
+
+# Test / coverage
+**/coverage/
+**/test-output/
+**/hs_err_pid*

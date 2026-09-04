@@ -1,0 +1,22 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" routerLink="/">Serialized Coupons</a>
+    <nav>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+      <a routerLink="/coupon-batches" routerLinkActive="active">Batches</a>
+      <a routerLink="/coupon-batches/new" routerLinkActive="active">Create</a>
+      <a routerLink="/serialized-coupons" routerLinkActive="active">Search</a>
+    </nav>
+  </header>
+
+  @if (notifications.notice(); as notice) {
+    <div class="toast" [class]="notice.kind" role="status" aria-live="polite">
+      <span>{{ notice.message }}</span>
+      <button type="button" (click)="notifications.clear()" aria-label="Dismiss notification">×</button>
+    </div>
+  }
+
+  <main>
+    <router-outlet />
+  </main>
+</div>

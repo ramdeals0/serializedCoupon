@@ -1,0 +1,70 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Operations</p>
+      <h1>Serialized coupon dashboard</h1>
+    </div>
+    <a class="button primary" routerLink="/coupon-batches/new">Create batch</a>
+  </header>
+
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Loading dashboard…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="button" (click)="refresh()">Retry</button>
+    </div>
+  } @else if (summary(); as data) {
+    <div class="stat-grid">
+      <article class="stat-card">
+        <p class="stat-label">Total batches</p>
+        <p class="stat-value">{{ data.totalBatches }}</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Serialized coupons</p>
+        <p class="stat-value">{{ data.totalSerializedCoupons }}</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Active coupons</p>
+        <p class="stat-value">{{ data.activeCoupons }}</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Expired coupons</p>
+        <p class="stat-value">{{ data.expiredCoupons }}</p>
+      </article>
+    </div>
+
+    <h2>Recent batches</h2>
+    @if (data.recentBatches.length === 0) {
+      <p class="empty">No batches yet. Create a generation batch to get started.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Created</th>
+              <th>RMS coupon</th>
+              <th>Program</th>
+              <th>Generated</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (batch of data.recentBatches; track batch.id) {
+              <tr>
+                <td>{{ batch.createdAt | date: 'medium' }}</td>
+                <td>
+                  <a [routerLink]="['/coupon-batches', batch.id]">{{ batch.rmsCouponId }}</a>
+                  <div class="muted">{{ batch.rmsCouponName }}</div>
+                </td>
+                <td><code>{{ batch.couponProgramCode }}</code></td>
+                <td>{{ batch.generatedQuantity }} / {{ batch.requestedQuantity }}</td>
+                <td><span class="badge">{{ batch.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

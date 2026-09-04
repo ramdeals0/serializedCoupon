@@ -1,0 +1,44 @@
+<section class="page">
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Loading coupon…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (coupon(); as data) {
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Serialized coupon</p>
+        <h1><code>{{ data.couponCode }}</code></h1>
+      </div>
+      <div class="actions">
+        <button class="button" type="button" (click)="validate()" [disabled]="validating()">
+          {{ validating() ? 'Validating…' : 'Validate now' }}
+        </button>
+        @if (canDeactivate(data)) {
+          <button class="button danger" type="button" (click)="deactivate()">Deactivate</button>
+        }
+      </div>
+    </header>
+
+    <dl class="meta-grid">
+      <div><dt>Status</dt><dd><span class="badge">{{ data.status }}</span></dd></div>
+      <div><dt>RMS coupon</dt><dd>{{ data.rmsCouponId }} / {{ data.rmsCouponCode || '—' }}</dd></div>
+      <div><dt>Batch</dt><dd><a [routerLink]="['/coupon-batches', data.batchId]">{{ data.batchId }}</a></dd></div>
+      <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
+      <div><dt>Start</dt><dd>{{ data.startAt | date: 'medium' }}</dd></div>
+      <div><dt>Expires</dt><dd>{{ data.expiresAt | date: 'medium' }}</dd></div>
+      <div><dt>Redeemed at</dt><dd>{{ data.redeemedAt ? (data.redeemedAt | date: 'medium') : '—' }}</dd></div>
+      <div><dt>Deactivated at</dt><dd>{{ data.deactivatedAt ? (data.deactivatedAt | date: 'medium') : '—' }}</dd></div>
+    </dl>
+
+    @if (validation(); as result) {
+      <section class="form-card" [class.valid]="result.valid" [class.invalid]="!result.valid">
+        <h2>Current validation</h2>
+        <p>
+          <strong>{{ result.valid ? 'Redeemable' : 'Not redeemable' }}</strong>
+          — {{ result.validationReason }}
+        </p>
+        <p class="muted">Checked at {{ result.checkedAt | date: 'medium' }}</p>
+      </section>
+    }
+  }
+</section>
