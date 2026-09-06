@@ -11,6 +11,7 @@ import com.skillnet.serializedcoupon.domain.SerializedCouponStatus;
 import com.skillnet.serializedcoupon.domain.ValidationReason;
 import com.skillnet.serializedcoupon.dto.ExternalCouponRequest;
 import com.skillnet.serializedcoupon.integration.rms.RmsCouponClient;
+import com.skillnet.serializedcoupon.integration.rms.RmsCouponDetails;
 import com.skillnet.serializedcoupon.repository.SerializedCouponRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ class CouponRedemptionServiceTest {
     void validateDoesNotMarkUsed() {
         SerializedCoupon coupon = activeCoupon(CouponSource.BOTH, 1);
         when(serializedCouponRepository.findByCouponCode(CODE)).thenReturn(Optional.of(coupon));
-        when(rmsCouponClient.couponDefinitionExistsAndIsActive("RMS-COUPON-1001")).thenReturn(true);
+        stubLiveRmsActive();
 
         var response = service.validate(new ExternalCouponRequest(CODE, RedeemChannel.POS, "STORE-1", null));
 
@@ -77,7 +78,7 @@ class CouponRedemptionServiceTest {
     void redeemMarksCouponUsed() {
         SerializedCoupon coupon = activeCoupon(CouponSource.BOTH, 1);
         when(serializedCouponRepository.findByCouponCode(CODE)).thenReturn(Optional.of(coupon));
-        when(rmsCouponClient.couponDefinitionExistsAndIsActive("RMS-COUPON-1001")).thenReturn(true);
+        stubLiveRmsActive();
         when(serializedCouponRepository.save(coupon)).thenReturn(coupon);
 
         var response = service.redeem(new ExternalCouponRequest(CODE, RedeemChannel.ECOMM, null, "ORDER-9"));
@@ -100,6 +101,12 @@ class CouponRedemptionServiceTest {
         assertThat(response.markedUsed()).isFalse();
         assertThat(response.validationReason()).isEqualTo(ValidationReason.CHANNEL_NOT_ALLOWED);
         verify(serializedCouponRepository, never()).save(any());
+    }
+
+    private void stubLiveRmsActive() {
+        when(rmsCouponClient.getCouponDefinition("RMS-COUPON-1001")).thenReturn(Optional.of(
+                new RmsCouponDetails("RMS-COUPON-1001", "FALL26", "Fall 2026 BOGO", null, true)
+        ));
     }
 
     private SerializedCoupon activeCoupon(CouponSource source, int usageLimit) {

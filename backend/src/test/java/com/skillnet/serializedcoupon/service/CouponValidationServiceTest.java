@@ -7,6 +7,7 @@ import com.skillnet.serializedcoupon.domain.SerializedCouponStatus;
 import com.skillnet.serializedcoupon.domain.ValidationReason;
 import com.skillnet.serializedcoupon.dto.CouponValidationResponse;
 import com.skillnet.serializedcoupon.integration.rms.RmsCouponClient;
+import com.skillnet.serializedcoupon.integration.rms.RmsCouponDetails;
 import com.skillnet.serializedcoupon.repository.SerializedCouponRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ class CouponValidationServiceTest {
                 Instant.parse("2026-12-31T23:59:59Z"),
                 true);
         when(serializedCouponRepository.findByCouponCode(CODE)).thenReturn(Optional.of(coupon));
-        when(rmsCouponClient.couponDefinitionExistsAndIsActive("RMS-COUPON-1001")).thenReturn(true);
+        stubLiveRms(true);
 
         CouponValidationResponse response = service.validate(CODE);
 
@@ -106,8 +107,19 @@ class CouponValidationServiceTest {
                 Instant.parse("2026-09-01T00:00:00Z"),
                 Instant.parse("2026-12-31T23:59:59Z"),
                 true);
-        when(rmsCouponClient.couponDefinitionExistsAndIsActive("RMS-COUPON-1001")).thenReturn(false);
+        stubLiveRms(false);
         assertThat(service.determineReason(coupon, NOW)).isEqualTo(ValidationReason.RMS_COUPON_INACTIVE);
+    }
+
+    @Test
+    void unknownLiveRmsWithActiveLocalCatalogIsValid() {
+        SerializedCoupon coupon = coupon(SerializedCouponStatus.ACTIVE,
+                Instant.parse("2026-09-01T00:00:00Z"),
+                Instant.parse("2026-12-31T23:59:59Z"),
+                true);
+        coupon.getRmsCouponDefinition().setRmsCouponId("C1234");
+        when(rmsCouponClient.getCouponDefinition("C1234")).thenReturn(Optional.empty());
+        assertThat(service.determineReason(coupon, NOW)).isEqualTo(ValidationReason.VALID);
     }
 
     @Test
@@ -121,7 +133,7 @@ class CouponValidationServiceTest {
     @Test
     void startAtBoundaryIsInclusive() {
         SerializedCoupon coupon = coupon(SerializedCouponStatus.ACTIVE, NOW, Instant.parse("2026-12-31T00:00:00Z"), true);
-        when(rmsCouponClient.couponDefinitionExistsAndIsActive("RMS-COUPON-1001")).thenReturn(true);
+        stubLiveRms(true);
         assertThat(service.determineReason(coupon, NOW)).isEqualTo(ValidationReason.VALID);
         assertThat(service.determineReason(coupon, NOW.minusNanos(1))).isEqualTo(ValidationReason.NOT_STARTED);
     }
@@ -129,7 +141,7 @@ class CouponValidationServiceTest {
     @Test
     void expiresAtBoundaryIsInclusive() {
         SerializedCoupon coupon = coupon(SerializedCouponStatus.ACTIVE, Instant.parse("2026-01-01T00:00:00Z"), NOW, true);
-        when(rmsCouponClient.couponDefinitionExistsAndIsActive("RMS-COUPON-1001")).thenReturn(true);
+        stubLiveRms(true);
         assertThat(service.determineReason(coupon, NOW)).isEqualTo(ValidationReason.VALID);
         assertThat(service.determineReason(coupon, NOW.plusNanos(1))).isEqualTo(ValidationReason.EXPIRED);
     }
@@ -141,6 +153,12 @@ class CouponValidationServiceTest {
                 Instant.parse("2026-12-31T23:59:59Z"),
                 true);
         assertThat(service.determineReason(coupon, NOW)).isEqualTo(ValidationReason.INVALID_STATUS);
+    }
+
+    private void stubLiveRms(boolean active) {
+        when(rmsCouponClient.getCouponDefinition("RMS-COUPON-1001")).thenReturn(Optional.of(
+                new RmsCouponDetails("RMS-COUPON-1001", "FALL26", "Fall 2026 BOGO", null, active)
+        ));
     }
 
     private SerializedCoupon coupon(SerializedCouponStatus status, Instant startAt, Instant expiresAt, boolean rmsActive) {

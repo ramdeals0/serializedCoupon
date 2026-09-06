@@ -180,6 +180,40 @@ class CouponApiIntegrationTest {
     }
 
     @Test
+    void customPosCodeCouponIsValidWhenLocalCatalogIsActive() throws Exception {
+        MvcResult couponCreated = mockMvc.perform(post("/api/v1/coupons")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Custom POS offer",
+                                  "usageLimit": 2,
+                                  "couponProgramCode": "2323",
+                                  "posCode": "C1234",
+                                  "couponSource": "POS",
+                                  "startAt": "2026-09-01T00:00:00Z",
+                                  "expiresAt": "2026-12-31T23:59:59Z"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String couponId = objectMapper.readTree(couponCreated.getResponse().getContentAsString()).get("id").asText();
+
+        MvcResult batch = mockMvc.perform(post("/api/v1/coupon-batches")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"couponId\":\"%s\",\"quantity\":1}".formatted(couponId)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String code = objectMapper.readTree(batch.getResponse().getContentAsString())
+                .get("sampleCouponCodes").get(0).asText();
+
+        mockMvc.perform(post("/api/v1/serialized-coupons/{couponCode}/validate", code))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.validationReason").value("VALID"));
+    }
+
+    @Test
     @Transactional
     void couponCodeUniqueConstraintIsEnforced() {
         RmsCouponDefinition rms = rmsCouponDefinitionRepository.findByRmsCouponId("RMS-COUPON-1001")
