@@ -16,4 +16,4 @@ app:
   rms:
     client: ${RMS_CLIENT:mock}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://serializedcoupon.up.railway.app}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://serializedcoupon.up.railway.app,https://serializedcoupon-production.up.railway.app}

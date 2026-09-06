@@ -1,9 +1,10 @@
 package com.skillnet.serializedcoupon.service;
 
 import com.skillnet.serializedcoupon.config.CouponGenerationProperties;
+import com.skillnet.serializedcoupon.domain.Coupon;
 import com.skillnet.serializedcoupon.domain.CouponBatch;
 import com.skillnet.serializedcoupon.domain.CouponBatchStatus;
-import com.skillnet.serializedcoupon.domain.CouponCodes;
+import com.skillnet.serializedcoupon.domain.CouponStatus;
 import com.skillnet.serializedcoupon.domain.RmsCouponDefinition;
 import com.skillnet.serializedcoupon.domain.SerializedCoupon;
 import com.skillnet.serializedcoupon.domain.SerializedCouponStatus;
@@ -15,14 +16,12 @@ import com.skillnet.serializedcoupon.exception.CouponGenerationException;
 import com.skillnet.serializedcoupon.exception.IdempotencyConflictException;
 import com.skillnet.serializedcoupon.exception.ResourceNotFoundException;
 import com.skillnet.serializedcoupon.exception.RmsCouponInactiveException;
-import com.skillnet.serializedcoupon.exception.RmsCouponNotFoundException;
 import com.skillnet.serializedcoupon.integration.rms.RmsCouponClient;
-import com.skillnet.serializedcoupon.integration.rms.RmsCouponDetails;
 import com.skillnet.serializedcoupon.mapper.CouponMapper;
 import com.skillnet.serializedcoupon.repository.CouponBatchRepository;
 import com.skillnet.serializedcoupon.repository.CouponBatchSpecifications;
-import com.skillnet.serializedcoupon.repository.RmsCouponDefinitionRepository;
 import com.skillnet.serializedcoupon.repository.SerializedCouponRepository;
+import com.skillnet.serializedcoupon.security.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,7 +55,7 @@ public class CouponBatchService {
 
     private final CouponBatchRepository couponBatchRepository;
     private final SerializedCouponRepository serializedCouponRepository;
-    private final RmsCouponDefinitionRepository rmsCouponDefinitionRepository;
+    private final CouponService couponService;
     private final RmsCouponClient rmsCouponClient;
     private final CouponCodeGenerator couponCodeGenerator;
     private final CouponGenerationProperties generationProperties;
@@ -67,7 +66,7 @@ public class CouponBatchService {
     public CouponBatchService(
             CouponBatchRepository couponBatchRepository,
             SerializedCouponRepository serializedCouponRepository,
-            RmsCouponDefinitionRepository rmsCouponDefinitionRepository,
+            CouponService couponService,
             RmsCouponClient rmsCouponClient,
             CouponCodeGenerator couponCodeGenerator,
             CouponGenerationProperties generationProperties,
@@ -77,7 +76,7 @@ public class CouponBatchService {
     ) {
         this.couponBatchRepository = couponBatchRepository;
         this.serializedCouponRepository = serializedCouponRepository;
-        this.rmsCouponDefinitionRepository = rmsCouponDefinitionRepository;
+        this.couponService = couponService;
         this.rmsCouponClient = rmsCouponClient;
         this.couponCodeGenerator = couponCodeGenerator;
         this.generationProperties = generationProperties;
@@ -90,54 +89,72 @@ public class CouponBatchService {
     }
 
     public BatchCreationResult createBatch(CreateCouponBatchRequest request, String idempotencyKey) {
-        validateRequest(request);
+        validateQuantity(request.quantity());
         String fingerprint = fingerprint(request);
         String normalizedKey = StringUtils.hasText(idempotencyKey) ? idempotencyKey.trim() : null;
-
         if (normalizedKey != null) {
             var existing = couponBatchRepository.findByIdempotencyKey(normalizedKey);
             if (existing.isPresent()) {
-                return replayOrConflict(existing.get(), fingerprint, request.rmsCouponId());
+                CouponBatch prior = existing.get();
+                String priorRmsCouponId = prior.getRmsCouponDefinition() != null
+                        ? prior.getRmsCouponDefinition().getRmsCouponId()
+                        : "";
+                return replayOrConflict(prior, fingerprint, priorRmsCouponId);
             }
         }
 
-        RmsCouponDetails rmsDetails = rmsCouponClient.getCouponDefinition(request.rmsCouponId())
-                .orElseThrow(() -> new RmsCouponNotFoundException(request.rmsCouponId()));
-        if (!rmsDetails.active()) {
-            throw new RmsCouponInactiveException(request.rmsCouponId());
+        Coupon coupon = couponService.require(request.couponId());
+        if (coupon.getStatus() != CouponStatus.ACTIVE) {
+            throw new BusinessValidationException("Coupon is not active: " + coupon.getId());
         }
+        Instant now = Instant.now(clock);
+        if (now.isAfter(coupon.getExpiresAt())) {
+            throw new BusinessValidationException("Cannot generate a batch for an expired coupon");
+        }
+        String rmsCouponId = coupon.getRmsCouponDefinition().getRmsCouponId();
+
+        rmsCouponClient.getCouponDefinition(rmsCouponId).ifPresent(rmsDetails -> {
+            if (!rmsDetails.active()) {
+                throw new RmsCouponInactiveException(rmsCouponId);
+            }
+        });
 
         UUID batchId;
         try {
             batchId = transactionTemplate.execute(status -> {
-                RmsCouponDefinition rmsDefinition = synchronizeRmsDefinition(rmsDetails);
                 CouponBatch batch = new CouponBatch();
-                batch.setRmsCouponDefinition(rmsDefinition);
-                batch.setCouponProgramCode(request.couponProgramCode());
+                batch.setCoupon(coupon);
+                batch.setRmsCouponDefinition(coupon.getRmsCouponDefinition());
+                batch.setCouponProgramCode(coupon.getCouponProgramCode());
                 batch.setRequestedQuantity(request.quantity());
                 batch.setGeneratedQuantity(0);
-                batch.setStartAt(request.startAt());
-                batch.setExpiresAt(request.expiresAt());
+                batch.setStartAt(coupon.getStartAt());
+                batch.setExpiresAt(coupon.getExpiresAt());
                 batch.setStatus(CouponBatchStatus.PROCESSING);
-                batch.setExternalReference(request.externalReference());
+                batch.setExternalReference(
+                        StringUtils.hasText(request.externalReference())
+                                ? request.externalReference()
+                                : coupon.getExternalReference()
+                );
                 batch.setIdempotencyKey(normalizedKey);
                 batch.setRequestFingerprint(fingerprint);
+                batch.setCreatedBy(CurrentUser.username());
                 return couponBatchRepository.saveAndFlush(batch).getId();
             });
         } catch (DataIntegrityViolationException ex) {
             if (normalizedKey != null) {
                 CouponBatch raced = couponBatchRepository.findByIdempotencyKey(normalizedKey)
                         .orElseThrow(() -> ex);
-                return replayOrConflict(raced, fingerprint, request.rmsCouponId());
+                return replayOrConflict(raced, fingerprint, rmsCouponId);
             }
             throw ex;
         }
 
-        log.info("Starting coupon generation batchId={} rmsCouponId={} requested={}",
-                batchId, request.rmsCouponId(), request.quantity());
+        log.info("Starting coupon generation batchId={} couponId={} rmsCouponId={} requested={}",
+                batchId, coupon.getId(), rmsCouponId, request.quantity());
 
         try {
-            transactionTemplate.executeWithoutResult(status -> generateAndComplete(batchId, request));
+            transactionTemplate.executeWithoutResult(status -> generateAndComplete(batchId, request.quantity()));
         } catch (RuntimeException ex) {
             markFailed(batchId, ex.getMessage());
             if (ex instanceof CouponGenerationException) {
@@ -148,8 +165,8 @@ public class CouponBatchService {
 
         CouponBatch completed = couponBatchRepository.findWithRmsById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon batch not found: " + batchId));
-        log.info("Completed coupon generation batchId={} rmsCouponId={} generated={}",
-                batchId, request.rmsCouponId(), completed.getGeneratedQuantity());
+        log.info("Completed coupon generation batchId={} couponId={} generated={}",
+                batchId, coupon.getId(), completed.getGeneratedQuantity());
         return new BatchCreationResult(toResponse(completed), false);
     }
 
@@ -183,30 +200,29 @@ public class CouponBatchService {
         return toResponse(batch);
     }
 
-    public void generateAndComplete(UUID batchId, CreateCouponBatchRequest request) {
+    public void generateAndComplete(UUID batchId, int quantity) {
         CouponBatch batch = couponBatchRepository.findWithRmsById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon batch not found: " + batchId));
         RmsCouponDefinition rmsDefinition = batch.getRmsCouponDefinition();
-        int quantity = request.quantity();
         int chunkSize = Math.max(1, generationProperties.getPersistenceChunkSize());
         Set<String> seenInRequest = new HashSet<>(quantity);
         List<SerializedCoupon> chunk = new ArrayList<>(chunkSize);
         Instant now = Instant.now(clock);
-        SerializedCouponStatus initialStatus = now.isBefore(request.startAt())
+        SerializedCouponStatus initialStatus = now.isBefore(batch.getStartAt())
                 ? SerializedCouponStatus.PENDING
                 : SerializedCouponStatus.ACTIVE;
 
         for (int i = 0; i < quantity; i++) {
-            SerializedCoupon coupon = new SerializedCoupon();
-            coupon.setCouponBatch(batch);
-            coupon.setRmsCouponDefinition(rmsDefinition);
-            coupon.setCouponCode(nextUniqueCode(request.couponProgramCode(), seenInRequest, batchId));
-            coupon.setCouponProgramCode(request.couponProgramCode());
-            coupon.setStartAt(request.startAt());
-            coupon.setExpiresAt(request.expiresAt());
-            coupon.setStatus(initialStatus);
-            coupon.setExternalReference(request.externalReference());
-            chunk.add(coupon);
+            SerializedCoupon serialized = new SerializedCoupon();
+            serialized.setCouponBatch(batch);
+            serialized.setRmsCouponDefinition(rmsDefinition);
+            serialized.setCouponCode(nextUniqueCode(batch.getCouponProgramCode(), seenInRequest, batchId));
+            serialized.setCouponProgramCode(batch.getCouponProgramCode());
+            serialized.setStartAt(batch.getStartAt());
+            serialized.setExpiresAt(batch.getExpiresAt());
+            serialized.setStatus(initialStatus);
+            serialized.setExternalReference(batch.getExternalReference());
+            chunk.add(serialized);
             if (chunk.size() >= chunkSize) {
                 persistChunk(chunk);
                 chunk.clear();
@@ -241,18 +257,7 @@ public class CouponBatchService {
         return couponMapper.toResponse(batch, sample);
     }
 
-    private void validateRequest(CreateCouponBatchRequest request) {
-        if (!CouponCodes.isValidProgramCode(request.couponProgramCode())) {
-            throw new BusinessValidationException("couponProgramCode must be exactly 4 digits");
-        }
-        if (request.startAt() == null || request.expiresAt() == null || !request.startAt().isBefore(request.expiresAt())) {
-            throw new BusinessValidationException("startAt must be strictly before expiresAt");
-        }
-        Instant now = Instant.now(clock);
-        if (now.isAfter(request.expiresAt())) {
-            throw new BusinessValidationException("expiresAt must not be in the past");
-        }
-        int quantity = request.quantity();
+    private void validateQuantity(int quantity) {
         if (quantity < generationProperties.getMinBatchSize()) {
             throw new BusinessValidationException("quantity must be at least " + generationProperties.getMinBatchSize());
         }
@@ -261,17 +266,6 @@ public class CouponBatchService {
                     "quantity exceeds configured maximum of " + generationProperties.getMaxBatchSize()
             );
         }
-    }
-
-    private RmsCouponDefinition synchronizeRmsDefinition(RmsCouponDetails details) {
-        RmsCouponDefinition entity = rmsCouponDefinitionRepository.findByRmsCouponId(details.rmsCouponId())
-                .orElseGet(RmsCouponDefinition::new);
-        entity.setRmsCouponId(details.rmsCouponId());
-        entity.setRmsCouponCode(details.rmsCouponCode());
-        entity.setName(details.name());
-        entity.setDescription(details.description());
-        entity.setActive(details.active());
-        return rmsCouponDefinitionRepository.save(entity);
     }
 
     private void persistChunk(List<SerializedCoupon> chunk) {
@@ -312,11 +306,8 @@ public class CouponBatchService {
 
     private String fingerprint(CreateCouponBatchRequest request) {
         String canonical = String.join("|",
-                nullToEmpty(request.rmsCouponId()),
-                nullToEmpty(request.couponProgramCode()),
+                request.couponId().toString(),
                 String.valueOf(request.quantity()),
-                request.startAt().toString(),
-                request.expiresAt().toString(),
                 nullToEmpty(request.externalReference())
         );
         try {

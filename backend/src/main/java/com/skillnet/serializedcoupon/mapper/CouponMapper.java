@@ -1,9 +1,11 @@
 package com.skillnet.serializedcoupon.mapper;
 
+import com.skillnet.serializedcoupon.domain.Coupon;
 import com.skillnet.serializedcoupon.domain.CouponBatch;
 import com.skillnet.serializedcoupon.domain.RmsCouponDefinition;
 import com.skillnet.serializedcoupon.domain.SerializedCoupon;
 import com.skillnet.serializedcoupon.dto.CouponBatchResponse;
+import com.skillnet.serializedcoupon.dto.CouponResponse;
 import com.skillnet.serializedcoupon.dto.RmsCouponDefinitionResponse;
 import com.skillnet.serializedcoupon.dto.SerializedCouponResponse;
 import org.springframework.stereotype.Component;
@@ -28,8 +30,10 @@ public class CouponMapper {
 
     public CouponBatchResponse toResponse(CouponBatch batch, List<String> sampleCouponCodes) {
         RmsCouponDefinition rms = batch.getRmsCouponDefinition();
+        Coupon coupon = batch.getCoupon();
         return new CouponBatchResponse(
                 batch.getId(),
+                coupon == null ? null : coupon.getId(),
                 rms.getRmsCouponId(),
                 rms.getRmsCouponCode(),
                 rms.getName(),
@@ -44,6 +48,29 @@ public class CouponMapper {
                 batch.getCreatedAt(),
                 batch.getUpdatedAt(),
                 sampleCouponCodes
+        );
+    }
+
+    public CouponResponse toResponse(Coupon coupon) {
+        RmsCouponDefinition rms = coupon.getRmsCouponDefinition();
+        return new CouponResponse(
+                coupon.getId(),
+                coupon.getTitle(),
+                coupon.getDescription(),
+                coupon.getUsageLimit(),
+                coupon.getPosCode(),
+                coupon.getAtgCode(),
+                coupon.getCouponSource(),
+                rms.getRmsCouponId(),
+                rms.getRmsCouponCode(),
+                rms.getName(),
+                coupon.getCouponProgramCode(),
+                coupon.getStartAt(),
+                coupon.getExpiresAt(),
+                coupon.getStatus(),
+                coupon.getCreatedBy(),
+                coupon.getCreatedAt(),
+                coupon.getUpdatedAt()
         );
     }
 

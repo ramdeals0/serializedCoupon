@@ -1,6 +1,7 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import {
   couponProgramCodeValidator,
+  sourceCodesValidator,
   startBeforeExpiresValidator,
 } from './coupon-validators';
 
@@ -35,5 +36,17 @@ describe('coupon validators', () => {
       { validators: startBeforeExpiresValidator },
     );
     expect(group.errors).toBeNull();
+  });
+
+  it('requires POS and ATG codes when source is Both', () => {
+    const group = new FormGroup(
+      {
+        couponSource: new FormControl('BOTH'),
+        posCode: new FormControl(''),
+        atgCode: new FormControl(''),
+      },
+      { validators: sourceCodesValidator },
+    );
+    expect(group.errors).toEqual({ sourceCodesRequired: true });
   });
 });

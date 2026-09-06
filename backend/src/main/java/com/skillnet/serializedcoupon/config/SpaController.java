@@ -12,6 +12,10 @@ public class SpaController {
 
     @GetMapping({
             "/",
+            "/login",
+            "/pos-demo",
+            "/coupons",
+            "/coupons/{*path}",
             "/coupon-batches",
             "/coupon-batches/{*path}",
             "/serialized-coupons",

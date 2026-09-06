@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PageResponse, SerializedCoupon, SerializedCouponStatus } from '../../core/models/api.models';
+import { AuthService } from '../../core/services/auth.service';
 import { SerializedCouponApiService } from '../../core/services/serialized-coupon-api.service';
 import { toIsoUtc } from '../../core/validation/coupon-validators';
 
@@ -14,6 +15,7 @@ import { toIsoUtc } from '../../core/validation/coupon-validators';
 export class CouponSearchPage implements OnInit {
   private readonly api = inject(SerializedCouponApiService);
   private readonly fb = inject(FormBuilder);
+  readonly auth = inject(AuthService);
 
   readonly statuses: SerializedCouponStatus[] = [
     'ACTIVE',

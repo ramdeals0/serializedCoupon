@@ -15,8 +15,16 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        AppProperties.Cors cors = appProperties.getCors();
+        String[] origins = CorsOrigins.resolve(
+                cors.getAllowedOrigins(),
+                cors.getPublicDomain(),
+                cors.getStaticUrl());
+        if (origins.length == 0) {
+            origins = new String[] {"http://localhost:4200", "http://127.0.0.1:4200"};
+        }
         registry.addMapping("/api/**")
-                .allowedOrigins(appProperties.getCors().getAllowedOrigins().toArray(String[]::new))
+                .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .exposedHeaders("Content-Disposition", "Location")

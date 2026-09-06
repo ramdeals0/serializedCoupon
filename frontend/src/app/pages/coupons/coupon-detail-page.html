@@ -22,7 +22,13 @@
     <dl class="meta-grid">
       <div><dt>Status</dt><dd><span class="badge">{{ data.status }}</span></dd></div>
       <div><dt>RMS coupon</dt><dd>{{ data.rmsCouponId }} / {{ data.rmsCouponCode || '—' }}</dd></div>
-      <div><dt>Batch</dt><dd><a [routerLink]="['/coupon-batches', data.batchId]">{{ data.batchId }}</a></dd></div>
+      <div><dt>Batch</dt><dd>
+        @if (auth.can('batches')) {
+          <a [routerLink]="['/coupon-batches', data.batchId]">{{ data.batchId }}</a>
+        } @else {
+          {{ data.batchId }}
+        }
+      </dd></div>
       <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
       <div><dt>Start</dt><dd>{{ data.startAt | date: 'medium' }}</dd></div>
       <div><dt>Expires</dt><dd>{{ data.expiresAt | date: 'medium' }}</dd></div>

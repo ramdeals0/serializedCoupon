@@ -21,8 +21,7 @@ import java.util.UUID;
 @Service
 public class CouponExportService {
 
-    public static final String CSV_HEADER =
-            "couponCode,rmsCouponId,rmsCouponCode,couponProgramCode,startAt,expiresAt,status,externalReference,createdAt";
+    public static final String CSV_HEADER = "couponCode,expiresAt";
 
     private final CouponBatchRepository couponBatchRepository;
     private final SerializedCouponRepository serializedCouponRepository;
@@ -43,8 +42,7 @@ public class CouponExportService {
         try {
             writer.write(CSV_HEADER);
             writer.write('\n');
-            Specification<SerializedCoupon> spec = SerializedCouponSpecifications.withRelationsFetch()
-                    .and(SerializedCouponSpecifications.batchIdEquals(batchId));
+            Specification<SerializedCoupon> spec = SerializedCouponSpecifications.batchIdEquals(batchId);
             int pageNumber = 0;
             Page<SerializedCoupon> page;
             do {
@@ -67,14 +65,7 @@ public class CouponExportService {
     private String toCsvRow(SerializedCoupon coupon) {
         return String.join(",",
                 csv(coupon.getCouponCode()),
-                csv(coupon.getRmsCouponDefinition().getRmsCouponId()),
-                csv(coupon.getRmsCouponDefinition().getRmsCouponCode()),
-                csv(coupon.getCouponProgramCode()),
-                csv(instant(coupon.getStartAt())),
-                csv(instant(coupon.getExpiresAt())),
-                csv(coupon.getStatus().name()),
-                csv(coupon.getExternalReference()),
-                csv(instant(coupon.getCreatedAt()))
+                csv(instant(coupon.getExpiresAt()))
         );
     }
 

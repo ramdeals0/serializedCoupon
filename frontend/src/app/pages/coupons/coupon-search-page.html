@@ -1,8 +1,8 @@
 <section class="page">
   <header class="page-header">
     <div>
-      <p class="eyebrow">Lookup</p>
-      <h1>Serialized coupons</h1>
+      <p class="eyebrow">{{ auth.can('create') ? 'Lookup' : 'Customer service' }}</p>
+      <h1>{{ auth.can('create') ? 'Serialized coupons' : 'Coupon status' }}</h1>
     </div>
   </header>
 

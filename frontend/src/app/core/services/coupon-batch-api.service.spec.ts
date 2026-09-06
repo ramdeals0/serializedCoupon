@@ -12,11 +12,8 @@ describe('CouponBatchApiService', () => {
     const service = TestBed.inject(CouponBatchApiService);
     const http = TestBed.inject(HttpTestingController);
     const payload = {
-      rmsCouponId: 'RMS-COUPON-1001',
-      couponProgramCode: '1234',
+      couponId: 'coupon-99',
       quantity: 10,
-      startAt: '2026-09-10T00:00:00.000Z',
-      expiresAt: '2026-12-31T23:59:59.000Z',
       externalReference: 'FALL-2026-CAMPAIGN',
     };
 

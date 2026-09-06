@@ -1,11 +1,12 @@
 # Architecture
 
-Serialized coupons are always tied to an RMS coupon definition. The backend owns code generation, uniqueness, lifecycle, and validation. The Angular app is an operations console.
+Serialized coupons are always tied to an RMS coupon definition. The backend owns code generation, uniqueness, lifecycle, and validation. The Angular app is an operations console. Access is role-based (`ADMIN`, `MANAGER`, `CUSTOMER_SERVICE`) using JWT Bearer tokens.
 
 ## Domain
 
 - `RmsCouponDefinition` — local copy of an RMS coupon (`rmsCouponId` unique)
-- `CouponBatch` — generation request, validity window, idempotency key, status
+- `Coupon` — offer definition (title, optional description, usage limit, 4-digit program code, POS/ATG codes, source, validity window)
+- `CouponBatch` — generation request against an existing coupon, quantity, idempotency key, status
 - `SerializedCoupon` — 14-character code, optimistic lock `version`, no physical delete of historical rows
 
 `couponProgramCode` is the canonical name across API, database, UI, tests, and docs.

@@ -1,0 +1,39 @@
+.pos-demo {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.api-docs article,
+.pos-demo .split article {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.pos-demo pre {
+  overflow-x: auto;
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+}
+
+.result {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+.result.accepted {
+  color: #1b5e20;
+}
+
+.result.rejected {
+  color: #8a1c13;
+}
+
+.pos-demo .form-card .actions {
+  margin-top: 0;
+}

@@ -1,59 +1,46 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { GenerationConfig, RmsCouponDefinition } from '../../core/models/api.models';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Coupon, GenerationConfig } from '../../core/models/api.models';
+import { CouponApiService } from '../../core/services/coupon-api.service';
 import { CouponBatchApiService } from '../../core/services/coupon-batch-api.service';
 import { DashboardApiService } from '../../core/services/dashboard-api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { RmsCouponApiService } from '../../core/services/rms-coupon-api.service';
-import {
-  couponProgramCodeValidator,
-  startBeforeExpiresValidator,
-  toDateTimeLocalValue,
-  toIsoUtc,
-} from '../../core/validation/coupon-validators';
 
 @Component({
   selector: 'app-create-batch-page',
-  imports: [ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './create-batch-page.html',
 })
 export class CreateBatchPage implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly rmsApi = inject(RmsCouponApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly couponApi = inject(CouponApiService);
   private readonly batchApi = inject(CouponBatchApiService);
   private readonly dashboardApi = inject(DashboardApiService);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
 
   readonly couponCodePattern = '^FF[0-9]{4}[A-Z0-9]{8}$';
-  readonly rmsOptions = signal<RmsCouponDefinition[]>([]);
-  readonly selectedRms = signal<RmsCouponDefinition | null>(null);
+  readonly coupon = signal<Coupon | null>(null);
   readonly config = signal<GenerationConfig | null>(null);
   readonly submitting = signal(false);
-  readonly loadingRms = signal(false);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
-  readonly form = this.fb.nonNullable.group(
-    {
-      rmsCouponId: ['', Validators.required],
-      couponProgramCode: ['', [Validators.required, couponProgramCodeValidator]],
-      quantity: [10, [Validators.required, Validators.min(1)]],
-      startAt: [toDateTimeLocalValue(), Validators.required],
-      expiresAt: [toDateTimeLocalValue(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)), Validators.required],
-      externalReference: [''],
-    },
-    { validators: startBeforeExpiresValidator },
-  );
+  readonly form = this.fb.nonNullable.group({
+    quantity: [10, [Validators.required, Validators.min(1)]],
+    externalReference: [''],
+  });
 
   ngOnInit(): void {
-    this.loadingRms.set(true);
-    this.rmsApi.search(undefined, undefined, 0, 50).subscribe({
-      next: (page) => {
-        this.rmsOptions.set(page.content);
-        this.loadingRms.set(false);
-      },
-      error: () => this.loadingRms.set(false),
-    });
+    const couponId = this.route.snapshot.paramMap.get('couponId');
+    if (!couponId) {
+      this.error.set('Select a coupon before generating a batch.');
+      this.loading.set(false);
+      return;
+    }
     this.dashboardApi.generationConfig().subscribe({
       next: (config) => {
         this.config.set(config);
@@ -61,13 +48,24 @@ export class CreateBatchPage implements OnInit {
         this.form.controls.quantity.updateValueAndValidity();
       },
     });
-    this.form.controls.rmsCouponId.valueChanges.subscribe((id) => {
-      this.selectedRms.set(this.rmsOptions().find((item) => item.rmsCouponId === id) ?? null);
+    this.couponApi.get(couponId).subscribe({
+      next: (coupon) => {
+        this.coupon.set(coupon);
+        this.loading.set(false);
+        if (coupon.status !== 'ACTIVE') {
+          this.error.set('Only an active coupon can generate a batch.');
+        }
+      },
+      error: () => {
+        this.error.set('Unable to load coupon.');
+        this.loading.set(false);
+      },
     });
   }
 
   submit(): void {
-    if (this.form.invalid || this.submitting()) {
+    const coupon = this.coupon();
+    if (!coupon || coupon.status !== 'ACTIVE' || this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
       return;
     }
@@ -76,11 +74,8 @@ export class CreateBatchPage implements OnInit {
     this.batchApi
       .create(
         {
-          rmsCouponId: value.rmsCouponId,
-          couponProgramCode: value.couponProgramCode,
+          couponId: coupon.id,
           quantity: Number(value.quantity),
-          startAt: toIsoUtc(value.startAt),
-          expiresAt: toIsoUtc(value.expiresAt),
           externalReference: value.externalReference || null,
         },
         crypto.randomUUID(),

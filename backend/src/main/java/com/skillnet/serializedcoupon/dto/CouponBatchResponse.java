@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record CouponBatchResponse(
         UUID id,
+        UUID couponId,
         String rmsCouponId,
         String rmsCouponCode,
         String rmsCouponName,

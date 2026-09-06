@@ -13,6 +13,24 @@ export const couponProgramCodeValidator: ValidatorFn = (
   return COUPON_PROGRAM_CODE_PATTERN.test(value) ? null : { couponProgramCode: true };
 };
 
+export const sourceCodesValidator: ValidatorFn = (
+  control: AbstractControl,
+): ValidationErrors | null => {
+  const source = control.get('couponSource')?.value as string | null;
+  const pos = ((control.get('posCode')?.value as string | null) ?? '').trim();
+  const atg = ((control.get('atgCode')?.value as string | null) ?? '').trim();
+  if (source === 'POS' && !pos) {
+    return { posCodeRequired: true };
+  }
+  if (source === 'ECOMM' && !atg) {
+    return { atgCodeRequired: true };
+  }
+  if (source === 'BOTH' && (!pos || !atg)) {
+    return { sourceCodesRequired: true };
+  }
+  return null;
+};
+
 export const startBeforeExpiresValidator: ValidatorFn = (
   control: AbstractControl,
 ): ValidationErrors | null => {

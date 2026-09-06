@@ -23,6 +23,7 @@ Browser (Angular)
     ▼
 Spring controllers
     │
+    ├── CouponService (offer definition)
     ├── CouponBatchService (generation, idempotency)
     ├── CouponValidationService (Clock-based validity)
     ├── SerializedCouponService (search, deactivate)
@@ -110,6 +111,8 @@ See `.env.example`. Important variables:
 | --- | --- | --- |
 | `SPRING_PROFILES_ACTIVE` | `local` or `postgres` | `local` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins | `http://localhost:4200,http://127.0.0.1:4200` |
+| `JWT_SECRET` | HMAC secret for access tokens | local development default |
+| `AUTH_ADMIN_PASSWORD` / `AUTH_MANAGER_PASSWORD` / `AUTH_CSR_PASSWORD` | Seeded account passwords | `Admin123!` / `Manager123!` / `Csr123!` |
 | `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | PostgreSQL connection | `localhost` / `5432` / `serialized_coupon` / `coupon` / `coupon` |
 | `RMS_CLIENT` | `mock` or `rest` | `mock` |
 | `RMS_BASE_URL` | Required when `RMS_CLIENT=rest` | empty |
@@ -117,6 +120,7 @@ See `.env.example`. Important variables:
 | `COUPON_MAX_BATCH_SIZE` | Max coupons per batch | `10000` |
 | `COUPON_COLLISION_RETRY_LIMIT` | Per-code generation retries | `20` |
 | `COUPON_REQUIRE_LIVE_RMS` | Validate RMS still active at redemption check | `true` |
+| `EXTERNAL_API_KEY` | API key for POS/e-comm validate and redeem | `pos-demo-key` |
 
 Do not commit real credentials.
 
@@ -135,32 +139,61 @@ Batch creation refuses missing or inactive RMS coupons.
 
 ## API examples
 
-Create a batch:
+Create a coupon, then generate a batch:
 
 ```bash
+COUPON_ID=$(curl -s -X POST http://localhost:8080/api/v1/coupons \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"title\": \"Fall 2026 BOGO\",
+    \"description\": \"Buy one get one serialized coupon program\",
+    \"usageLimit\": 1,
+    \"couponProgramCode\": \"1234\",
+    \"posCode\": \"RMS-COUPON-1001\",
+    \"atgCode\": \"FALL26-ATG\",
+    \"couponSource\": \"BOTH\",
+    \"startAt\": \"2026-09-10T00:00:00Z\",
+    \"expiresAt\": \"2026-12-31T23:59:59Z\"
+  }" | jq -r .id)
+
 curl -s -X POST http://localhost:8080/api/v1/coupon-batches \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: $(uuidgen)" \
   -d "{
-    \"rmsCouponId\": \"RMS-COUPON-1001\",
-    \"couponProgramCode\": \"1234\",
-    \"quantity\": 5,
-    \"startAt\": \"2026-09-10T00:00:00Z\",
-    \"expiresAt\": \"2026-12-31T23:59:59Z\",
-    \"externalReference\": \"FALL-2026-CAMPAIGN\"
+    \"couponId\": \"$COUPON_ID\",
+    \"quantity\": 5
   }"
 ```
 
-Validate a coupon:
+Validate a coupon (check-only, operations JWT):
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/serialized-coupons/FF1234ABCD2345/validate
+curl -s -X POST http://localhost:8080/api/v1/serialized-coupons/FF1234ABCD2345/validate \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-Export a batch as CSV:
+External POS / e-comm validate and redeem (API key, no JWT). Mock UI: `http://127.0.0.1:4200/pos-demo`
 
 ```bash
-curl -s -D - "http://localhost:8080/api/v1/coupon-batches/{batchId}/export" -o coupons.csv
+curl -s -X POST http://localhost:8080/api/v1/external/coupons/validate \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: pos-demo-key" \
+  -d '{"couponCode":"FF1234ABCD2345","channel":"POS","locationId":"STORE-1"}'
+
+curl -s -X POST http://localhost:8080/api/v1/external/coupons/redeem \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: pos-demo-key" \
+  -d '{"couponCode":"FF1234ABCD2345","channel":"POS","locationId":"STORE-1","reference":"TXN-1001"}'
+```
+
+Export a batch as CSV (serialized coupon code and expiration date only):
+
+```bash
+curl -s -D - "http://localhost:8080/api/v1/coupon-batches/{batchId}/export" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o coupons.csv
 ```
 
 ## Coupon format
@@ -203,15 +236,32 @@ The 4-digit segment may still contain `0`–`9`. The frontend never generates co
 
 ## Authentication
 
-No login system is included. CORS is configurable. Controllers and services are ready to accept a future `createdBy` / security filter. Do not treat the API as publicly safe without an identity layer.
+JWT login is required for operations `/api/v1` calls except `POST /api/v1/auth/login`. Send `Authorization: Bearer <token>`.
+
+POS and e-comm systems can call `POST /api/v1/external/coupons/validate` and `POST /api/v1/external/coupons/redeem` with `X-Api-Key` instead of a user JWT. The local demo key is `pos-demo-key`. The mock page is `http://127.0.0.1:4200/pos-demo`.
+
+| Role | Access |
+| --- | --- |
+| `ADMIN` | Full access: dashboard, batches, create, search, validate, deactivate |
+| `MANAGER` | Create coupons, generate batches, view batches, search/validate serialized coupons |
+| `CUSTOMER_SERVICE` | Search and view serialized coupon status (including validate) |
+
+Seeded local/demo accounts (override with env vars):
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `admin` | `Admin123!` | Admin |
+| `manager` | `Manager123!` | Manager |
+| `csr` | `Csr123!` | Customer service |
+
+Change these passwords in production through `AUTH_ADMIN_PASSWORD`, `AUTH_MANAGER_PASSWORD`, `AUTH_CSR_PASSWORD`, and set a unique `JWT_SECRET`. CORS remains configurable. Batch `createdBy` is set from the authenticated username.
 
 ## Known limitations and future work
 
-- Authentication, authorization, and RBAC
+- Password reset / self-service user management
 - Async queue processing for very large batches
-- Scheduled expiration housekeeping
 - Real RMS API integration
-- Redemption endpoint and POS/RMS redemption synchronization
+- POS/RMS redemption synchronization beyond the external validate/redeem APIs
 - Request correlation IDs / audit event stream
 - Testcontainers PostgreSQL once Docker is available
 - Spring Boot 3.5.x is the requested 3.x line; 3.5 OSS patches ended mid-2026, so plan a Boot 4 upgrade for long-term support

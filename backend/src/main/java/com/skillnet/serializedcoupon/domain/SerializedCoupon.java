@@ -54,6 +54,9 @@ public class SerializedCoupon extends AuditedEntity {
     @Column(name = "deactivated_at")
     private Instant deactivatedAt;
 
+    @Column(name = "times_used")
+    private Integer timesUsed = 0;
+
     @Column(name = "external_reference", length = 128)
     private String externalReference;
 
@@ -139,6 +142,14 @@ public class SerializedCoupon extends AuditedEntity {
 
     public void setDeactivatedAt(Instant deactivatedAt) {
         this.deactivatedAt = deactivatedAt;
+    }
+
+    public int getTimesUsed() {
+        return timesUsed == null ? 0 : timesUsed;
+    }
+
+    public void setTimesUsed(int timesUsed) {
+        this.timesUsed = timesUsed;
     }
 
     public String getExternalReference() {

@@ -17,7 +17,7 @@ import java.util.UUID;
 public interface SerializedCouponRepository
         extends JpaRepository<SerializedCoupon, UUID>, JpaSpecificationExecutor<SerializedCoupon> {
 
-    @EntityGraph(attributePaths = {"couponBatch", "rmsCouponDefinition"})
+    @EntityGraph(attributePaths = {"couponBatch", "couponBatch.coupon", "rmsCouponDefinition"})
     Optional<SerializedCoupon> findByCouponCode(String couponCode);
 
     boolean existsByCouponCode(String couponCode);

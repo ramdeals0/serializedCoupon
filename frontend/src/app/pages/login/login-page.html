@@ -1,0 +1,31 @@
+<section class="login-page">
+  <div class="login-card">
+    <img class="login-logo" src="/brand/skillnet-logo-black.png" alt="SkillNet" />
+    <p class="eyebrow">SkillNet · Serialized Coupons</p>
+    <h1>Sign in</h1>
+    <p class="lede">Use your assigned role to open the operations console.</p>
+
+    @if (error(); as message) {
+      <div class="banner error" role="alert">{{ message }}</div>
+    }
+
+    <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Username
+        <input formControlName="username" autocomplete="username" />
+      </label>
+      <label>
+        Password
+        <input formControlName="password" type="password" autocomplete="current-password" />
+      </label>
+      <button class="button primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+
+    <p class="hint demo-link">
+      External POS / e-comm demo:
+      <a routerLink="/pos-demo">{{ origin }}/pos-demo</a>
+    </p>
+  </div>
+</section>

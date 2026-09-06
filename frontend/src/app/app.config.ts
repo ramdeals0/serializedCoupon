@@ -2,6 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
+import { authInterceptor } from './core/http/auth.interceptor';
 import { apiErrorInterceptor } from './core/http/api-error.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -9,6 +10,6 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([apiErrorInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, apiErrorInterceptor])),
   ],
 };

@@ -9,6 +9,7 @@ import {
   SerializedCouponStatus,
 } from '../../core/models/api.models';
 import { CouponBatchApiService } from '../../core/services/coupon-batch-api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SerializedCouponApiService } from '../../core/services/serialized-coupon-api.service';
 
@@ -23,6 +24,7 @@ export class BatchDetailPage implements OnInit {
   private readonly couponApi = inject(SerializedCouponApiService);
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+  readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -128,6 +130,6 @@ export class BatchDetailPage implements OnInit {
   }
 
   canDeactivate(coupon: SerializedCoupon): boolean {
-    return coupon.status === 'ACTIVE' || coupon.status === 'PENDING';
+    return this.auth.can('deactivate') && (coupon.status === 'ACTIVE' || coupon.status === 'PENDING');
   }
 }
