@@ -55,7 +55,7 @@ export class LoginPage {
     if (url.startsWith('/serialized-coupons')) {
       return this.auth.can('search');
     }
-    if (url === '/' || url.startsWith('/?')) {
+    if (url.startsWith('/dashboard')) {
       return this.auth.can('dashboard');
     }
     return true;

@@ -56,4 +56,20 @@ describe('AuthService', () => {
     expect(service.homePath()).toBe('/serialized-coupons');
     http.verify();
   });
+
+  it('sends administrators to the operations dashboard', () => {
+    const service = TestBed.inject(AuthService);
+    const http = TestBed.inject(HttpTestingController);
+    service.login('admin', 'Admin123!').subscribe();
+    http.expectOne(`${environment.apiBaseUrl}/auth/login`).flush({
+      token: 'jwt-token',
+      tokenType: 'Bearer',
+      expiresAt: '2099-01-01T00:00:00Z',
+      username: 'admin',
+      displayName: 'Administrator',
+      role: 'ADMIN',
+    });
+    expect(service.homePath()).toBe('/dashboard');
+    http.verify();
+  });
 });

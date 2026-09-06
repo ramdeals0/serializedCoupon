@@ -39,7 +39,7 @@ export class AuthService {
     if (role === 'CUSTOMER_SERVICE') {
       return '/serialized-coupons';
     }
-    return '/';
+    return '/dashboard';
   }
 
   login(username: string, password: string) {

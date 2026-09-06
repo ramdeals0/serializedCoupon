@@ -11,12 +11,14 @@ import { CouponListPage } from './pages/offers/coupon-list-page';
 import { CreateCouponPage } from './pages/offers/create-coupon-page';
 import { CouponOfferDetailPage } from './pages/offers/coupon-detail-page';
 import { PosDemoPage } from './pages/pos-demo/pos-demo-page';
+import { LandingPage } from './pages/landing/landing-page';
 
 export const routes: Routes = [
+  { path: '', component: LandingPage },
   { path: 'login', component: LoginPage, canActivate: [guestGuard] },
   { path: 'pos-demo', component: PosDemoPage },
   {
-    path: '',
+    path: 'dashboard',
     component: DashboardPage,
     canActivate: [authGuard, permissionGuard],
     data: { permission: 'dashboard' },

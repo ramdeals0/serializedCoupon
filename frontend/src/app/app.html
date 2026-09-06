@@ -1,6 +1,6 @@
 <div class="app-shell">
   <header class="topbar">
-    <a class="brand" [routerLink]="auth.isLoggedIn() ? auth.homePath() : '/login'">
+    <a class="brand" [routerLink]="auth.isLoggedIn() ? auth.homePath() : '/'">
       <img class="brand-logo" src="/brand/skillnet-logo-black.png" alt="SkillNet" />
       <span class="brand-copy">
         <span class="brand-name">SkillNet</span>
@@ -10,7 +10,7 @@
     @if (auth.isLoggedIn()) {
       <nav>
         @if (auth.can('dashboard')) {
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+          <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
         }
         @if (auth.can('create')) {
           <a routerLink="/coupons" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Coupons</a>
@@ -32,6 +32,10 @@
         <button class="button" type="button" (click)="logout()">Sign out</button>
       </div>
     } @else {
+      <nav>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
+        <a routerLink="/pos-demo" routerLinkActive="active">POS demo</a>
+      </nav>
       <div class="session">
         <a class="button primary" routerLink="/login">Sign in</a>
       </div>
