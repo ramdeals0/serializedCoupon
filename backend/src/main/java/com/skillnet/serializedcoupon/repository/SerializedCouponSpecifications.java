@@ -17,7 +17,7 @@ public final class SerializedCouponSpecifications {
         return (root, query, cb) -> {
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
                 root.fetch("rmsCouponDefinition", JoinType.INNER);
-                root.fetch("couponBatch", JoinType.INNER);
+                root.fetch("couponBatch", JoinType.INNER).fetch("coupon", JoinType.LEFT);
                 query.distinct(true);
             }
             return cb.conjunction();

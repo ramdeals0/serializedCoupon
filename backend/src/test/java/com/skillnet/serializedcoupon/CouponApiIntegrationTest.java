@@ -211,6 +211,11 @@ class CouponApiIntegrationTest {
                 .andExpect(jsonPath("$.valid").value(true))
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.validationReason").value("VALID"));
+
+        mockMvc.perform(get("/api/v1/serialized-coupons/{couponCode}", code))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timesUsed").value(0))
+                .andExpect(jsonPath("$.usageLimit").value(2));
     }
 
     @Test

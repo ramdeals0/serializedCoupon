@@ -9,18 +9,17 @@
         <p class="eyebrow">Serialized coupon</p>
         <h1><code>{{ data.couponCode }}</code></h1>
       </div>
-      <div class="actions">
-        <button class="button" type="button" (click)="validate()" [disabled]="validating()">
-          {{ validating() ? 'Validating…' : 'Validate now' }}
-        </button>
-        @if (canDeactivate(data)) {
+      @if (canDeactivate(data)) {
+        <div class="actions">
           <button class="button danger" type="button" (click)="deactivate()">Deactivate</button>
-        }
-      </div>
+        </div>
+      }
     </header>
 
     <dl class="meta-grid">
       <div><dt>Status</dt><dd><span class="badge">{{ data.status }}</span></dd></div>
+      <div><dt>Times used</dt><dd>{{ data.timesUsed }}</dd></div>
+      <div><dt>Remaining uses</dt><dd>{{ remainingUses(data) }}</dd></div>
       <div><dt>RMS coupon</dt><dd>{{ data.rmsCouponId }} / {{ data.rmsCouponCode || '—' }}</dd></div>
       <div><dt>Batch</dt><dd>
         @if (auth.can('batches')) {

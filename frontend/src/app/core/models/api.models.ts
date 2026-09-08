@@ -136,6 +136,8 @@ export interface SerializedCoupon {
   status: SerializedCouponStatus;
   redeemedAt: string | null;
   deactivatedAt: string | null;
+  timesUsed: number;
+  usageLimit: number;
   externalReference: string | null;
   createdAt: string;
   updatedAt: string;

@@ -87,9 +87,19 @@ public class CouponMapper {
                 coupon.getStatus(),
                 coupon.getRedeemedAt(),
                 coupon.getDeactivatedAt(),
+                coupon.getTimesUsed(),
+                usageLimit(coupon),
                 coupon.getExternalReference(),
                 coupon.getCreatedAt(),
                 coupon.getUpdatedAt()
         );
+    }
+
+    private int usageLimit(SerializedCoupon coupon) {
+        Coupon offer = coupon.getCouponBatch() == null ? null : coupon.getCouponBatch().getCoupon();
+        if (offer == null || offer.getUsageLimit() < 1) {
+            return 1;
+        }
+        return offer.getUsageLimit();
     }
 }

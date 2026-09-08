@@ -83,4 +83,8 @@ export class CouponDetailPage implements OnInit {
   canDeactivate(coupon: SerializedCoupon): boolean {
     return this.auth.can('deactivate') && (coupon.status === 'ACTIVE' || coupon.status === 'PENDING');
   }
+
+  remainingUses(coupon: SerializedCoupon): number {
+    return Math.max(0, coupon.usageLimit - coupon.timesUsed);
+  }
 }
