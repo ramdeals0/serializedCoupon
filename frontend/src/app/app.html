@@ -10,21 +10,18 @@
     @if (auth.isLoggedIn()) {
       <nav>
         @if (auth.can('dashboard')) {
-          <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-        }
-        @if (auth.can('create')) {
-          <a routerLink="/coupons" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Coupons</a>
-        }
-        @if (auth.can('batches')) {
-          <a routerLink="/coupon-batches" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Batches</a>
+          <a routerLink="/coupons" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
         }
         @if (auth.can('create')) {
           <a routerLink="/coupons/new" routerLinkActive="active">Create</a>
         }
+        @if (auth.can('batches')) {
+          <a routerLink="/coupon-batches" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Batch</a>
+        }
         @if (auth.can('search')) {
           <a routerLink="/serialized-coupons" routerLinkActive="active">Search</a>
         }
-        <a routerLink="/pos-demo" routerLinkActive="active">POS demo</a>
+        <a routerLink="/pos-demo" routerLinkActive="active">POS Demo</a>
       </nav>
       <div class="session">
         <span class="session-name">{{ auth.displayName() }}</span>
@@ -34,7 +31,7 @@
     } @else {
       <nav>
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
-        <a routerLink="/pos-demo" routerLinkActive="active">POS demo</a>
+        <a routerLink="/pos-demo" routerLinkActive="active">POS Demo</a>
       </nav>
       <div class="session">
         <a class="button primary" routerLink="/login">Sign in</a>

@@ -4,7 +4,11 @@
       <p class="eyebrow">Step 2 of 2</p>
       <h1>Generate batch</h1>
     </div>
-    <a class="button" routerLink="/coupons">Back to coupons</a>
+    @if (coupon(); as data) {
+      <a class="button" [routerLink]="['/coupons', data.id]">Back to coupon</a>
+    } @else {
+      <a class="button" routerLink="/coupons">Back to dashboard</a>
+    }
   </header>
 
   <p class="lede">
@@ -24,7 +28,7 @@
 
     <dl class="meta-grid">
       <div><dt>Title</dt><dd>{{ data.title }}</dd></div>
-      <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
+      <div><dt>Coupon program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
       <div><dt>POS code</dt><dd>{{ data.posCode || '—' }}</dd></div>
       <div><dt>ATG code</dt><dd>{{ data.atgCode || '—' }}</dd></div>
       <div>

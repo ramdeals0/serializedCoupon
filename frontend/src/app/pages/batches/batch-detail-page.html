@@ -19,8 +19,8 @@
       @if (data.couponId) {
         <div><dt>Coupon</dt><dd><a [routerLink]="['/coupons', data.couponId]"><code>{{ data.couponId }}</code></a></dd></div>
       }
-      <div><dt>RMS coupon</dt><dd>{{ data.rmsCouponId }} / {{ data.rmsCouponCode || '—' }}</dd></div>
-      <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
+      <div><dt>POS code</dt><dd>{{ data.rmsCouponId }}</dd></div>
+      <div><dt>Coupon program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
       <div><dt>Generated</dt><dd>{{ data.generatedQuantity }} / {{ data.requestedQuantity }}</dd></div>
       <div><dt>Status</dt><dd><span class="badge">{{ data.status }}</span></dd></div>
       <div><dt>Start</dt><dd>{{ data.startAt | date: 'medium' }}</dd></div>

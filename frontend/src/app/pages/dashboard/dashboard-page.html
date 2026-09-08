@@ -43,8 +43,8 @@
           <thead>
             <tr>
               <th>Created</th>
-              <th>RMS coupon</th>
-              <th>Program</th>
+              <th>POS code</th>
+              <th>Coupon program code</th>
               <th>Generated</th>
               <th>Status</th>
             </tr>
@@ -60,6 +60,43 @@
                 <td><code>{{ batch.couponProgramCode }}</code></td>
                 <td>{{ batch.generatedQuantity }} / {{ batch.requestedQuantity }}</td>
                 <td><span class="badge">{{ batch.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <h2>Coupon programs</h2>
+    @if (coupons().length === 0) {
+      <p class="empty">No coupons yet. Create a coupon, then generate a serialized batch.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Created</th>
+              <th>Title</th>
+              <th>Coupon program code</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (coupon of coupons(); track coupon.id) {
+              <tr>
+                <td>{{ coupon.createdAt | date: 'medium' }}</td>
+                <td>
+                  <a [routerLink]="['/coupons', coupon.id]">{{ coupon.title }}</a>
+                  <div class="muted">{{ coupon.couponSource === 'ECOMM' ? 'Ecomm' : coupon.couponSource === 'BOTH' ? 'Both' : 'POS' }}</div>
+                </td>
+                <td><code>{{ coupon.couponProgramCode }}</code></td>
+                <td><span class="badge">{{ coupon.status }}</span></td>
+                <td>
+                  @if (coupon.status === 'ACTIVE') {
+                    <a class="button" [routerLink]="['/coupons', coupon.id, 'batches', 'new']">Generate batch</a>
+                  }
+                </td>
               </tr>
             }
           </tbody>

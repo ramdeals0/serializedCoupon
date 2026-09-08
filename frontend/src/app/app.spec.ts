@@ -1,7 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { vi } from 'vitest';
 import { App } from './app';
 
 describe('App', () => {
@@ -37,8 +38,20 @@ describe('App', () => {
     expect(compiled.textContent).toContain('Serialized Coupons');
     expect(compiled.querySelector('.brand-logo')?.getAttribute('alt')).toBe('SkillNet');
     expect(compiled.textContent).toContain('Dashboard');
-    expect(compiled.textContent).toContain('Coupons');
     expect(compiled.textContent).toContain('Create');
+    expect(compiled.textContent).toContain('Batch');
+    expect(compiled.textContent).toContain('Search');
+    expect(compiled.textContent).toContain('POS Demo');
     expect(compiled.textContent).toContain('Administrator');
+  });
+
+  it('signs out to the landing page', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    fixture.componentInstance.logout();
+    expect(navigate).toHaveBeenCalledWith('/');
+    expect(fixture.componentInstance.auth.isLoggedIn()).toBe(false);
   });
 });

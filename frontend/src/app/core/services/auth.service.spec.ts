@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -8,11 +10,15 @@ describe('AuthService', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), AuthService],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), AuthService],
     });
   });
 
-  afterEach(() => sessionStorage.clear());
+  afterEach(() => {
+    TestBed.inject(AuthService).logout();
+    sessionStorage.clear();
+    vi.useRealTimers();
+  });
 
   it('stores a session and exposes role permissions', () => {
     const service = TestBed.inject(AuthService);
@@ -69,7 +75,45 @@ describe('AuthService', () => {
       displayName: 'Administrator',
       role: 'ADMIN',
     });
-    expect(service.homePath()).toBe('/dashboard');
+    expect(service.homePath()).toBe('/coupons');
+    http.verify();
+  });
+
+  it('sends sign-out and session timeout to the landing page', () => {
+    vi.useFakeTimers();
+    const service = TestBed.inject(AuthService);
+    const http = TestBed.inject(HttpTestingController);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    service.login('admin', 'Admin123!').subscribe();
+    http.expectOne(`${environment.apiBaseUrl}/auth/login`).flush({
+      token: 'jwt-token',
+      tokenType: 'Bearer',
+      expiresAt: new Date(Date.now() + 5_000).toISOString(),
+      username: 'admin',
+      displayName: 'Administrator',
+      role: 'ADMIN',
+    });
+    expect(service.isLoggedIn()).toBe(true);
+
+    service.endSession();
+    expect(service.isLoggedIn()).toBe(false);
+    expect(navigate).toHaveBeenCalledWith('/');
+
+    service.login('admin', 'Admin123!').subscribe();
+    http.expectOne(`${environment.apiBaseUrl}/auth/login`).flush({
+      token: 'jwt-token',
+      tokenType: 'Bearer',
+      expiresAt: new Date(Date.now() + 5_000).toISOString(),
+      username: 'admin',
+      displayName: 'Administrator',
+      role: 'ADMIN',
+    });
+    navigate.mockClear();
+    vi.advanceTimersByTime(5_000);
+    expect(service.isLoggedIn()).toBe(false);
+    expect(navigate).toHaveBeenCalledWith('/');
     http.verify();
   });
 });

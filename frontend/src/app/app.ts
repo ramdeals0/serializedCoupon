@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { NotificationService } from './core/services/notification.service';
 
@@ -12,11 +12,9 @@ import { NotificationService } from './core/services/notification.service';
 export class App {
   readonly notifications = inject(NotificationService);
   readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   readonly year = new Date().getFullYear();
 
   logout(): void {
-    this.auth.logout();
-    void this.router.navigate(['/login']);
+    this.auth.endSession();
   }
 }

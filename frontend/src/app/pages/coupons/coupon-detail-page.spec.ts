@@ -60,6 +60,9 @@ describe('CouponDetailPage', () => {
     expect(text).toContain('Times used');
     expect(text).toContain('1');
     expect(text).toContain('Remaining uses');
+    expect(text).toContain('POS code');
+    expect(text).toContain('Coupon program code');
+    expect(text).not.toContain('RMS coupon');
     expect(fixture.componentInstance.remainingUses(fixture.componentInstance.coupon()!)).toBe(1);
     http.verify();
   });

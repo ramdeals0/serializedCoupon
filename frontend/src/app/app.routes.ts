@@ -7,7 +7,6 @@ import { BatchDetailPage } from './pages/batches/batch-detail-page';
 import { CouponSearchPage } from './pages/coupons/coupon-search-page';
 import { CouponDetailPage } from './pages/coupons/coupon-detail-page';
 import { LoginPage } from './pages/login/login-page';
-import { CouponListPage } from './pages/offers/coupon-list-page';
 import { CreateCouponPage } from './pages/offers/create-coupon-page';
 import { CouponOfferDetailPage } from './pages/offers/coupon-detail-page';
 import { PosDemoPage } from './pages/pos-demo/pos-demo-page';
@@ -19,9 +18,8 @@ export const routes: Routes = [
   { path: 'pos-demo', component: PosDemoPage },
   {
     path: 'dashboard',
-    component: DashboardPage,
-    canActivate: [authGuard, permissionGuard],
-    data: { permission: 'dashboard' },
+    redirectTo: '/coupons',
+    pathMatch: 'full',
   },
   {
     path: 'coupons/new',
@@ -43,9 +41,9 @@ export const routes: Routes = [
   },
   {
     path: 'coupons',
-    component: CouponListPage,
+    component: DashboardPage,
     canActivate: [authGuard, permissionGuard],
-    data: { permission: 'create' },
+    data: { permission: 'dashboard' },
   },
   {
     path: 'coupon-batches',
