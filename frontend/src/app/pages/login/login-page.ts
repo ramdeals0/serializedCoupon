@@ -46,6 +46,9 @@ export class LoginPage {
   }
 
   private canOpen(url: string): boolean {
+    if (url === '/coupons' || url.startsWith('/dashboard')) {
+      return this.auth.can('dashboard');
+    }
     if (url.startsWith('/coupons')) {
       return this.auth.can('create');
     }
@@ -54,9 +57,6 @@ export class LoginPage {
     }
     if (url.startsWith('/serialized-coupons')) {
       return this.auth.can('search');
-    }
-    if (url.startsWith('/dashboard')) {
-      return this.auth.can('dashboard');
     }
     return true;
   }

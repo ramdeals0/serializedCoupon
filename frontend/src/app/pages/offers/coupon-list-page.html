@@ -11,11 +11,11 @@
 
   <form class="filters" [formGroup]="filters" (ngSubmit)="load(0)">
     <label>
-      RMS coupon ID
+      POS code
       <input formControlName="rmsCouponId" type="search" />
     </label>
     <label>
-      Program code
+      Coupon program code
       <input formControlName="couponProgramCode" maxlength="4" inputmode="numeric" />
     </label>
     <label>
@@ -44,7 +44,7 @@
             <tr>
               <th>Created</th>
               <th>Title</th>
-              <th>Program</th>
+              <th>Coupon program code</th>
               <th>Window</th>
               <th>Status</th>
               <th></th>

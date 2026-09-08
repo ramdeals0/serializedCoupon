@@ -1,10 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthSession, Permission, UserRole } from '../models/api.models';
 
 const STORAGE_KEY = 'serializedCoupon.auth';
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ADMIN: ['dashboard', 'batches', 'create', 'search', 'deactivate'],
@@ -15,12 +17,18 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly session = signal<AuthSession | null>(readStoredSession());
+  private expiryTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly user = this.session.asReadonly();
   readonly isLoggedIn = computed(() => this.session() !== null);
   readonly displayName = computed(() => this.session()?.displayName ?? '');
   readonly role = computed(() => this.session()?.role ?? null);
+
+  constructor() {
+    this.scheduleExpiry(this.session()?.expiresAt);
+  }
 
   token(): string | null {
     return this.session()?.token ?? null;
@@ -39,7 +47,7 @@ export class AuthService {
     if (role === 'CUSTOMER_SERVICE') {
       return '/serialized-coupons';
     }
-    return '/dashboard';
+    return '/coupons';
   }
 
   login(username: string, password: string) {
@@ -51,13 +59,46 @@ export class AuthService {
   }
 
   logout(): void {
+    this.clearExpiryTimer();
     this.session.set(null);
     sessionStorage.removeItem(STORAGE_KEY);
+  }
+
+  endSession(): void {
+    this.logout();
+    void this.router.navigateByUrl('/');
   }
 
   private persist(session: AuthSession): void {
     this.session.set(session);
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    this.scheduleExpiry(session.expiresAt);
+  }
+
+  private scheduleExpiry(expiresAt: string | undefined): void {
+    this.clearExpiryTimer();
+    if (!expiresAt) {
+      return;
+    }
+    const delay = Date.parse(expiresAt) - Date.now();
+    if (Number.isNaN(delay) || delay <= 0) {
+      this.endSession();
+      return;
+    }
+    this.expiryTimer = setTimeout(() => {
+      if (delay > MAX_TIMEOUT_MS) {
+        this.scheduleExpiry(expiresAt);
+        return;
+      }
+      this.endSession();
+    }, Math.min(delay, MAX_TIMEOUT_MS));
+  }
+
+  private clearExpiryTimer(): void {
+    if (this.expiryTimer !== null) {
+      clearTimeout(this.expiryTimer);
+      this.expiryTimer = null;
+    }
   }
 }
 

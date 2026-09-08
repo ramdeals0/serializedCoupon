@@ -4,16 +4,16 @@
       <p class="eyebrow">Generation</p>
       <h1>Coupon batches</h1>
     </div>
-    <a class="button primary" routerLink="/coupons">Generate from coupon</a>
+    <a class="button primary" routerLink="/coupons/new">Create coupon</a>
   </header>
 
   <form class="filters" [formGroup]="filters" (ngSubmit)="load(0)">
     <label>
-      RMS coupon ID
+      POS code
       <input formControlName="rmsCouponId" type="search" />
     </label>
     <label>
-      Program code
+      Coupon program code
       <input formControlName="couponProgramCode" maxlength="4" inputmode="numeric" />
     </label>
     <label>
@@ -41,8 +41,8 @@
           <thead>
             <tr>
               <th>Created</th>
-              <th>RMS coupon</th>
-              <th>Program</th>
+              <th>POS code</th>
+              <th>Coupon program code</th>
               <th>Quantity</th>
               <th>Window</th>
               <th>Status</th>

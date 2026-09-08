@@ -14,6 +14,7 @@ public class SpaController {
             "/",
             "/login",
             "/pos-demo",
+            "/help",
             "/dashboard",
             "/coupons",
             "/coupons/{*path}",
