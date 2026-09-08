@@ -42,6 +42,7 @@ describe('App', () => {
     expect(compiled.textContent).toContain('Batch');
     expect(compiled.textContent).toContain('Search');
     expect(compiled.textContent).toContain('POS Demo');
+    expect(compiled.textContent).toContain('Help');
     expect(compiled.textContent).toContain('Administrator');
   });
 

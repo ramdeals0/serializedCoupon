@@ -10,12 +10,14 @@ import { LoginPage } from './pages/login/login-page';
 import { CreateCouponPage } from './pages/offers/create-coupon-page';
 import { CouponOfferDetailPage } from './pages/offers/coupon-detail-page';
 import { PosDemoPage } from './pages/pos-demo/pos-demo-page';
+import { HelpPage } from './pages/help/help-page';
 import { LandingPage } from './pages/landing/landing-page';
 
 export const routes: Routes = [
   { path: '', component: LandingPage },
   { path: 'login', component: LoginPage, canActivate: [guestGuard] },
   { path: 'pos-demo', component: PosDemoPage },
+  { path: 'help', component: HelpPage },
   {
     path: 'dashboard',
     redirectTo: '/coupons',

@@ -1,0 +1,99 @@
+<section class="page help">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">SkillNet · Serialized Coupons</p>
+      <h1>Help</h1>
+    </div>
+  </header>
+
+  <p class="lede">
+    This console issues unique 14-character coupon codes, tracks how many times each code is used,
+    and lets POS or e-commerce check or mark a code used.
+  </p>
+
+  <h2>Using the menu</h2>
+  <div class="cards">
+    <article>
+      <h3>Dashboard</h3>
+      <p>Administrators see batch and coupon counts, recent batches, and coupon programs.</p>
+    </article>
+    <article>
+      <h3>Create</h3>
+      <p>Define the offer first: title, dates, usage limit, coupon program code, and POS / ATG codes.</p>
+    </article>
+    <article>
+      <h3>Batch</h3>
+      <p>Review generated batches, export CSV, and open a batch to see its serialized codes.</p>
+    </article>
+    <article>
+      <h3>Search</h3>
+      <p>Look up a serialized code. The results show status, expiration, and times used versus the usage limit.</p>
+    </article>
+    <article>
+      <h3>POS Demo</h3>
+      <p>Public page to call validate (check only) and redeem (validate and mark used) with an API key.</p>
+    </article>
+  </div>
+
+  <h2>Create a coupon, then a batch</h2>
+  <ol class="steps">
+    <li>
+      <span class="step-num">1</span>
+      <h3>Create</h3>
+      <p>Coupon program code is exactly four digits. Choose POS, Ecomm, or Both so the right identifier is required.</p>
+    </li>
+    <li>
+      <span class="step-num">2</span>
+      <h3>Generate batch</h3>
+      <p>The backend creates unique codes for that coupon. Generation is all-or-nothing for the requested quantity.</p>
+    </li>
+    <li>
+      <span class="step-num">3</span>
+      <h3>Export</h3>
+      <p>Download CSV with the serialized code and expiration for fulfillment.</p>
+    </li>
+    <li>
+      <span class="step-num">4</span>
+      <h3>Validate or redeem</h3>
+      <p>Stores and e-comm use the external APIs. Validate does not change usage. Redeem increments times used.</p>
+    </li>
+  </ol>
+
+  <h2>Serialized code format</h2>
+  <figure class="code-card">
+    <figcaption>Pattern</figcaption>
+    <code>{{ couponCodePattern }}</code>
+    <p>Prefix <strong>FF</strong> · 4-digit coupon program code · 8-character unique suffix. Example: <code>FF232364UH3P2S</code></p>
+  </figure>
+
+  <h2>Who can do what</h2>
+  <div class="cards role-cards">
+    <article>
+      <p class="role-label">Admin</p>
+      <p>Dashboard, create, batches, search, and deactivate a serialized code.</p>
+    </article>
+    <article>
+      <p class="role-label">Manager</p>
+      <p>Create coupons, generate batches, export, and search. No dashboard and no deactivate.</p>
+    </article>
+    <article>
+      <p class="role-label">Customer service</p>
+      <p>Search a code and confirm whether it is still valid for the shopper.</p>
+    </article>
+  </div>
+
+  <section class="cta">
+    <h2>Need to try a code?</h2>
+    <p>
+      Open the public POS demo to validate or redeem. Sign in only if you need the operations console.
+    </p>
+    <div class="hero-actions">
+      <a class="button primary" routerLink="/pos-demo">Open POS Demo</a>
+      @if (auth.isLoggedIn()) {
+        <a class="button" [routerLink]="auth.homePath()">Back to operations</a>
+      } @else {
+        <a class="button" routerLink="/login">Sign in</a>
+      }
+    </div>
+  </section>
+</section>
