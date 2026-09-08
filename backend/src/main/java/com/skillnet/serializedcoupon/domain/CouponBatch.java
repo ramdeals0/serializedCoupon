@@ -30,6 +30,10 @@ public class CouponBatch extends AuditedEntity {
     @JoinColumn(name = "rms_coupon_definition_id", nullable = false)
     private RmsCouponDefinition rmsCouponDefinition;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coupon_id")
+    private Coupon coupon;
+
     @Column(name = "coupon_program_code", nullable = false, length = 4)
     private String couponProgramCode;
 
@@ -81,6 +85,14 @@ public class CouponBatch extends AuditedEntity {
 
     public void setRmsCouponDefinition(RmsCouponDefinition rmsCouponDefinition) {
         this.rmsCouponDefinition = rmsCouponDefinition;
+    }
+
+    public Coupon getCoupon() {
+        return coupon;
+    }
+
+    public void setCoupon(Coupon coupon) {
+        this.coupon = coupon;
     }
 
     public String getCouponProgramCode() {

@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@WithMockUser(roles = "ADMIN")
 class CouponApiIntegrationTest {
 
     @Autowired
@@ -51,16 +54,33 @@ class CouponApiIntegrationTest {
 
     @Test
     void createBatchPersistsCouponsAndSupportsIdempotencyPaginationExportAndErrors() throws Exception {
-        String body = """
+        String couponBody = """
                 {
-                  "rmsCouponId": "RMS-COUPON-1001",
+                  "title": "Fall 2026 BOGO",
+                  "description": "Buy one get one serialized coupon program",
+                  "usageLimit": 1,
                   "couponProgramCode": "1234",
-                  "quantity": 12,
+                  "posCode": "RMS-COUPON-1001",
+                  "atgCode": "FALL26-ATG",
+                  "couponSource": "BOTH",
                   "startAt": "2026-09-01T00:00:00Z",
-                  "expiresAt": "2026-12-31T23:59:59Z",
-                  "externalReference": "FALL-2026-CAMPAIGN"
+                  "expiresAt": "2026-12-31T23:59:59Z"
                 }
                 """;
+        MvcResult couponCreated = mockMvc.perform(post("/api/v1/coupons")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(couponBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("Fall 2026 BOGO"))
+                .andExpect(jsonPath("$.couponProgramCode").value("1234"))
+                .andReturn();
+        String couponId = objectMapper.readTree(couponCreated.getResponse().getContentAsString()).get("id").asText();
+        String body = """
+                {
+                  "couponId": "%s",
+                  "quantity": 12
+                }
+                """.formatted(couponId);
 
         MvcResult created = mockMvc.perform(post("/api/v1/coupon-batches")
                         .header("Idempotency-Key", "test-key-create-12")
@@ -111,6 +131,9 @@ class CouponApiIntegrationTest {
                 .getResponse()
                 .getContentAsString();
         assertThat(csv).startsWith(CouponExportService.CSV_HEADER);
+        assertThat(csv).startsWith("couponCode,expiresAt\n");
+        assertThat(csv).containsPattern("(?m)^FF[0-9]{4}[A-Z0-9]{8},2026-12-31T23:59:59Z$");
+        assertThat(csv).doesNotContain("rmsCouponId");
         assertThat(csv.split("\n")).hasSizeGreaterThanOrEqualTo(13);
         assertThat(export.getResponse().getContentType()).contains("text/csv");
         assertThat(export.getResponse().getHeader("Content-Disposition")).contains("attachment");
@@ -121,13 +144,16 @@ class CouponApiIntegrationTest {
                 .andExpect(jsonPath("$.couponCode").value(firstCode))
                 .andExpect(jsonPath("$.valid").value(true));
 
-        mockMvc.perform(post("/api/v1/coupon-batches")
+        mockMvc.perform(post("/api/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "rmsCouponId": "RMS-COUPON-1001",
+                                  "title": "Fall 2026 BOGO",
+                                  "usageLimit": 1,
                                   "couponProgramCode": "12",
-                                  "quantity": 1,
+                                  "posCode": "RMS-COUPON-1001",
+                                  "atgCode": "FALL26-ATG",
+                                  "couponSource": "BOTH",
                                   "startAt": "2026-09-01T00:00:00Z",
                                   "expiresAt": "2026-12-31T23:59:59Z"
                                 }
@@ -136,19 +162,60 @@ class CouponApiIntegrationTest {
                 .andExpect(jsonPath("$.title").exists())
                 .andExpect(jsonPath("$.status").value(400));
 
-        mockMvc.perform(post("/api/v1/coupon-batches")
+        mockMvc.perform(post("/api/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "rmsCouponId": "RMS-COUPON-INACTIVE",
+                                  "title": "Retired promotion",
+                                  "usageLimit": 1,
                                   "couponProgramCode": "1234",
-                                  "quantity": 1,
+                                  "posCode": "RMS-COUPON-INACTIVE",
+                                  "couponSource": "POS",
                                   "startAt": "2026-09-01T00:00:00Z",
                                   "expiresAt": "2026-12-31T23:59:59Z"
                                 }
                                 """))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.title").value("RMS coupon inactive"));
+    }
+
+    @Test
+    void customPosCodeCouponIsValidWhenLocalCatalogIsActive() throws Exception {
+        MvcResult couponCreated = mockMvc.perform(post("/api/v1/coupons")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Custom POS offer",
+                                  "usageLimit": 2,
+                                  "couponProgramCode": "2323",
+                                  "posCode": "C1234",
+                                  "couponSource": "POS",
+                                  "startAt": "2026-09-01T00:00:00Z",
+                                  "expiresAt": "2026-12-31T23:59:59Z"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String couponId = objectMapper.readTree(couponCreated.getResponse().getContentAsString()).get("id").asText();
+
+        MvcResult batch = mockMvc.perform(post("/api/v1/coupon-batches")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"couponId\":\"%s\",\"quantity\":1}".formatted(couponId)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String code = objectMapper.readTree(batch.getResponse().getContentAsString())
+                .get("sampleCouponCodes").get(0).asText();
+
+        mockMvc.perform(post("/api/v1/serialized-coupons/{couponCode}/validate", code))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.validationReason").value("VALID"));
+
+        mockMvc.perform(get("/api/v1/serialized-coupons/{couponCode}", code))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timesUsed").value(0))
+                .andExpect(jsonPath("$.usageLimit").value(2));
     }
 
     @Test
@@ -172,6 +239,14 @@ class CouponApiIntegrationTest {
         SerializedCoupon duplicate = coupon(batch, rms, "FF5555ABCD2345");
         assertThatThrownBy(() -> serializedCouponRepository.saveAndFlush(duplicate))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void dashboardAllowsConfiguredCorsOrigin() throws Exception {
+        mockMvc.perform(get("/api/v1/dashboard")
+                        .header("Origin", "http://localhost:4200"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"));
     }
 
     private SerializedCoupon coupon(CouponBatch batch, RmsCouponDefinition rms, String code) {

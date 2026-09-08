@@ -1,0 +1,207 @@
+.landing {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0.5rem 0 2rem;
+}
+
+.hero {
+  display: grid;
+  gap: 1.15rem;
+  padding: 1.25rem 0 2rem;
+  border-bottom: 3px solid var(--gold);
+}
+
+.hero h1 {
+  max-width: 18ch;
+  font-size: clamp(2rem, 4vw, 2.85rem);
+  line-height: 1.15;
+}
+
+.hero .lede {
+  max-width: 40rem;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--font);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.code-card {
+  margin: 0.5rem 0 0;
+  padding: 1rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  width: min(28rem, 100%);
+}
+
+.code-card figcaption,
+.role-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.code-card code {
+  display: block;
+  margin: 0.45rem 0 0.35rem;
+  padding: 0;
+  background: transparent;
+  font-size: 1.45rem;
+  letter-spacing: 0.08em;
+}
+
+.code-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.problem {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  padding: 2rem 0 0.5rem;
+}
+
+.problem p {
+  max-width: 38rem;
+  line-height: 1.55;
+}
+
+.contrast {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.contrast li {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+
+.contrast span,
+.contrast em {
+  display: block;
+}
+
+.contrast span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.contrast strong {
+  display: block;
+  margin: 0.3rem 0;
+  font-size: 1.15rem;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.contrast em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+.steps li {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.steps h3,
+.cards h3 {
+  margin: 0.7rem 0 0.4rem;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.steps p,
+.cards p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--font);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+}
+
+.cards article {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.1rem 1.15rem;
+}
+
+.roles {
+  padding-top: 0.25rem;
+}
+
+.cta {
+  margin-top: 2rem;
+  padding: 1.5rem 1.35rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+}
+
+.cta h2 {
+  margin-top: 0;
+}
+
+.cta p {
+  max-width: 38rem;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .problem,
+  .steps,
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

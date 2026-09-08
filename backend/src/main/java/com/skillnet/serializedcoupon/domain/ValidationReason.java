@@ -9,5 +9,6 @@ public enum ValidationReason {
     DEACTIVATED,
     CANCELLED,
     RMS_COUPON_INACTIVE,
-    INVALID_STATUS
+    INVALID_STATUS,
+    CHANNEL_NOT_ALLOWED
 }

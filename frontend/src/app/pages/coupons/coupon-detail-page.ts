@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CouponValidation, SerializedCoupon } from '../../core/models/api.models';
+import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SerializedCouponApiService } from '../../core/services/serialized-coupon-api.service';
 
@@ -14,6 +15,7 @@ export class CouponDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(SerializedCouponApiService);
   private readonly notifications = inject(NotificationService);
+  readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -79,6 +81,10 @@ export class CouponDetailPage implements OnInit {
   }
 
   canDeactivate(coupon: SerializedCoupon): boolean {
-    return coupon.status === 'ACTIVE' || coupon.status === 'PENDING';
+    return this.auth.can('deactivate') && (coupon.status === 'ACTIVE' || coupon.status === 'PENDING');
+  }
+
+  remainingUses(coupon: SerializedCoupon): number {
+    return Math.max(0, coupon.usageLimit - coupon.timesUsed);
   }
 }

@@ -1,9 +1,11 @@
 package com.skillnet.serializedcoupon.mapper;
 
+import com.skillnet.serializedcoupon.domain.Coupon;
 import com.skillnet.serializedcoupon.domain.CouponBatch;
 import com.skillnet.serializedcoupon.domain.RmsCouponDefinition;
 import com.skillnet.serializedcoupon.domain.SerializedCoupon;
 import com.skillnet.serializedcoupon.dto.CouponBatchResponse;
+import com.skillnet.serializedcoupon.dto.CouponResponse;
 import com.skillnet.serializedcoupon.dto.RmsCouponDefinitionResponse;
 import com.skillnet.serializedcoupon.dto.SerializedCouponResponse;
 import org.springframework.stereotype.Component;
@@ -28,8 +30,10 @@ public class CouponMapper {
 
     public CouponBatchResponse toResponse(CouponBatch batch, List<String> sampleCouponCodes) {
         RmsCouponDefinition rms = batch.getRmsCouponDefinition();
+        Coupon coupon = batch.getCoupon();
         return new CouponBatchResponse(
                 batch.getId(),
+                coupon == null ? null : coupon.getId(),
                 rms.getRmsCouponId(),
                 rms.getRmsCouponCode(),
                 rms.getName(),
@@ -47,6 +51,29 @@ public class CouponMapper {
         );
     }
 
+    public CouponResponse toResponse(Coupon coupon) {
+        RmsCouponDefinition rms = coupon.getRmsCouponDefinition();
+        return new CouponResponse(
+                coupon.getId(),
+                coupon.getTitle(),
+                coupon.getDescription(),
+                coupon.getUsageLimit(),
+                coupon.getPosCode(),
+                coupon.getAtgCode(),
+                coupon.getCouponSource(),
+                rms.getRmsCouponId(),
+                rms.getRmsCouponCode(),
+                rms.getName(),
+                coupon.getCouponProgramCode(),
+                coupon.getStartAt(),
+                coupon.getExpiresAt(),
+                coupon.getStatus(),
+                coupon.getCreatedBy(),
+                coupon.getCreatedAt(),
+                coupon.getUpdatedAt()
+        );
+    }
+
     public SerializedCouponResponse toResponse(SerializedCoupon coupon) {
         return new SerializedCouponResponse(
                 coupon.getId(),
@@ -60,9 +87,19 @@ public class CouponMapper {
                 coupon.getStatus(),
                 coupon.getRedeemedAt(),
                 coupon.getDeactivatedAt(),
+                coupon.getTimesUsed(),
+                usageLimit(coupon),
                 coupon.getExternalReference(),
                 coupon.getCreatedAt(),
                 coupon.getUpdatedAt()
         );
+    }
+
+    private int usageLimit(SerializedCoupon coupon) {
+        Coupon offer = coupon.getCouponBatch() == null ? null : coupon.getCouponBatch().getCoupon();
+        if (offer == null || offer.getUsageLimit() < 1) {
+            return 1;
+        }
+        return offer.getUsageLimit();
     }
 }

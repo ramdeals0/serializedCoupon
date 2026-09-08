@@ -8,7 +8,8 @@ export const apiErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const notifications = inject(NotificationService);
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (!req.headers.has('X-Skip-Error-Notification')) {
+      const skipToast = req.headers.has('X-Skip-Error-Notification') || error.status === 401;
+      if (!skipToast) {
         notifications.error(extractProblemMessage(error));
       }
       return throwError(() => error);

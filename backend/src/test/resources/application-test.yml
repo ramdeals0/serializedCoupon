@@ -24,3 +24,11 @@ app:
       sample-size: 25
     validation:
       require-live-rms-active: true
+  auth:
+    jwt-secret: test-jwt-secret-change-me-32-bytes-ok
+    jwt-expiration: 1h
+    admin-password: Admin123!
+    manager-password: Manager123!
+    customer-service-password: Csr123!
+  external:
+    api-key: pos-demo-key

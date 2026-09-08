@@ -1,0 +1,103 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Step 1 of 2</p>
+      <h1>Create coupon</h1>
+    </div>
+  </header>
+
+  <p class="lede">
+    Define the coupon first. Serialized codes are generated in the next step.
+  </p>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Coupon title
+      <input formControlName="title" maxlength="255" autocomplete="off" />
+    </label>
+    @if (form.controls.title.touched && form.controls.title.hasError('required')) {
+      <p class="field-error">Enter a coupon title.</p>
+    }
+
+    <label>
+      Coupon description (optional)
+      <textarea formControlName="description" rows="3" maxlength="2000"></textarea>
+    </label>
+
+    <label>
+      Number of times coupon can be used
+      <input formControlName="usageLimit" type="number" min="1" max="10000" />
+      <span class="hint">How many times each serialized coupon can be used.</span>
+    </label>
+    @if (form.controls.usageLimit.touched && form.controls.usageLimit.invalid) {
+      <p class="field-error">Enter a usage limit of at least 1.</p>
+    }
+
+    <label>
+      Coupon program code
+      <input
+        formControlName="couponProgramCode"
+        maxlength="4"
+        inputmode="numeric"
+        placeholder="1234"
+        autocomplete="off"
+      />
+      <span class="hint">Exactly four digits. Leading zeros are kept, so 0001 is valid.</span>
+    </label>
+    @if (form.controls.couponProgramCode.touched && form.controls.couponProgramCode.hasError('couponProgramCode')) {
+      <p class="field-error">Enter exactly four digits (0000–9999).</p>
+    }
+
+    <fieldset class="choice-set">
+      <legend>Coupon source</legend>
+      <div class="choice-row">
+        @for (source of sources; track source.value) {
+          <label class="choice">
+            <input type="radio" formControlName="couponSource" [value]="source.value" />
+            {{ source.label }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="split">
+      <label>
+        POS code
+        <input formControlName="posCode" maxlength="64" autocomplete="off" />
+        <span class="hint">Required for POS or Both.</span>
+      </label>
+      <label>
+        ATG code
+        <input formControlName="atgCode" maxlength="64" autocomplete="off" />
+        <span class="hint">Required for Ecomm or Both.</span>
+      </label>
+    </div>
+    @if (form.touched && form.hasError('posCodeRequired')) {
+      <p class="field-error">POS code is required when the source is POS.</p>
+    }
+    @if (form.touched && form.hasError('atgCodeRequired')) {
+      <p class="field-error">ATG code is required when the source is Ecomm.</p>
+    }
+    @if (form.touched && form.hasError('sourceCodesRequired')) {
+      <p class="field-error">POS code and ATG code are required when the source is Both.</p>
+    }
+
+    <div class="split">
+      <label>
+        Start date/time
+        <input formControlName="startAt" type="datetime-local" />
+      </label>
+      <label>
+        Expiry date/time
+        <input formControlName="expiresAt" type="datetime-local" />
+      </label>
+    </div>
+    @if (form.touched && form.hasError('startBeforeExpires')) {
+      <p class="field-error">Expiration must be after the start date/time.</p>
+    }
+
+    <button class="button primary" type="submit" [disabled]="form.invalid || submitting()">
+      {{ submitting() ? 'Saving coupon…' : 'Create coupon and continue' }}
+    </button>
+  </form>
+</section>

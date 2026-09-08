@@ -1,0 +1,32 @@
+.login-page {
+  min-height: calc(100vh - 10rem);
+  display: grid;
+  place-items: center;
+}
+
+.login-card {
+  width: min(28rem, 100%);
+}
+
+.login-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+  margin-bottom: 1.1rem;
+}
+
+.login-card h1 {
+  margin-bottom: 0.35rem;
+}
+
+.login-card .form-card {
+  margin-top: 1.25rem;
+}
+
+.login-card .button.primary {
+  justify-self: start;
+}
+
+.demo-link {
+  margin-top: 1.25rem;
+}

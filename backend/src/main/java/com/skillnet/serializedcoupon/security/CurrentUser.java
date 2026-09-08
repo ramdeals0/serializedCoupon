@@ -1,0 +1,22 @@
+package com.skillnet.serializedcoupon.security;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+public final class CurrentUser {
+
+    private CurrentUser() {
+    }
+
+    public static String username() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        String name = authentication.getName();
+        if (name == null || name.isBlank() || "anonymousUser".equals(name)) {
+            return null;
+        }
+        return name;
+    }
+}

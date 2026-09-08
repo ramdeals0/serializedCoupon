@@ -1,0 +1,129 @@
+<section class="landing">
+  <section class="hero">
+    <p class="eyebrow">SkillNet · Commerce operations</p>
+    <h1>Serialized coupons that stay unique from issue to redemption</h1>
+    <p class="lede">
+      SkillNet Serialized Coupons turns an RMS promotion into individually tracked codes.
+      Operations teams define the offer, generate a batch, export codes, and let POS or
+      e-commerce validate or mark each code used.
+    </p>
+    <div class="hero-actions">
+      @if (auth.isLoggedIn()) {
+        <a class="button primary" [routerLink]="auth.homePath()">Open operations</a>
+      } @else {
+        <a class="button primary" routerLink="/login">Sign in to operations</a>
+      }
+      <a class="button" routerLink="/pos-demo">Try the POS demo</a>
+    </div>
+    <figure class="code-card">
+      <figcaption>Example serialized code</figcaption>
+      <code>FF7777VJXLJ73B</code>
+      <p>Prefix <strong>FF</strong> · 4-digit program · 8-character unique suffix</p>
+    </figure>
+  </section>
+
+  <section class="problem" aria-labelledby="why-heading">
+    <div>
+      <h2 id="why-heading">Why serialize a coupon?</h2>
+      <p>
+        A shared promo code can be copied, posted, and reused past the intended audience.
+        A serialized code is issued once, tied to a promotion window and usage limit, and
+        checked at the register or checkout before it is marked used.
+      </p>
+    </div>
+    <ul class="contrast">
+      <li>
+        <span>Generic code</span>
+        <strong>FALL26</strong>
+        <em>Anyone with the string can try it</em>
+      </li>
+      <li>
+        <span>Serialized code</span>
+        <strong>FF1234ZX98QW76</strong>
+        <em>One code, one tracked redemption path</em>
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="flow-heading">
+    <h2 id="flow-heading">How the application works</h2>
+    <ol class="steps">
+      <li>
+        <span class="step-num">1</span>
+        <h3>Create the coupon</h3>
+        <p>Set title, dates, usage limit, program code, and the RMS POS / ATG identifiers.</p>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <h3>Generate a batch</h3>
+        <p>The service issues unique 14-character codes and stores them against that coupon.</p>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <h3>Export for fulfillment</h3>
+        <p>Download a CSV with only the serialized code and expiration date.</p>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <h3>Validate or redeem</h3>
+        <p>POS and e-comm call the external APIs to check a code or mark it used.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="can-heading">
+    <h2 id="can-heading">What you can do here</h2>
+    <div class="cards">
+      <article>
+        <h3>Offer catalog</h3>
+        <p>Managers create and review coupons linked to live RMS definitions before any codes exist.</p>
+      </article>
+      <article>
+        <h3>Batch generation</h3>
+        <p>Request a quantity, retry collisions safely, and keep generation all-or-nothing per batch.</p>
+      </article>
+      <article>
+        <h3>Status lookup</h3>
+        <p>Customer service searches a code to see active, pending, redeemed, or deactivated status.</p>
+      </article>
+      <article>
+        <h3>Store and web APIs</h3>
+        <p>Validate is check-only. Redeem validates and increments usage when the channel is allowed.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="roles" aria-labelledby="roles-heading">
+    <h2 id="roles-heading">Who uses it</h2>
+    <div class="cards role-cards">
+      <article>
+        <p class="role-label">Admin</p>
+        <p>Full operations console, dashboard counts, and the ability to deactivate a code.</p>
+      </article>
+      <article>
+        <p class="role-label">Manager</p>
+        <p>Creates coupons, generates batches, exports CSV, and searches serialized codes.</p>
+      </article>
+      <article>
+        <p class="role-label">Customer service</p>
+        <p>Looks up a code and confirms whether it is still valid for the shopper.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="cta" aria-labelledby="cta-heading">
+    <h2 id="cta-heading">Ready to run a serialized program?</h2>
+    <p>
+      Sign in with your assigned role, or open the public POS demo to call validate and redeem
+      with an API key.
+    </p>
+    <div class="hero-actions">
+      @if (auth.isLoggedIn()) {
+        <a class="button primary" [routerLink]="auth.homePath()">Continue to operations</a>
+      } @else {
+        <a class="button primary" routerLink="/login">Sign in</a>
+      }
+      <a class="button" routerLink="/pos-demo">Open POS demo</a>
+    </div>
+  </section>
+</section>

@@ -1,20 +1,20 @@
 package com.skillnet.serializedcoupon.service;
 
 import com.skillnet.serializedcoupon.config.CouponGenerationProperties;
+import com.skillnet.serializedcoupon.domain.Coupon;
 import com.skillnet.serializedcoupon.domain.CouponBatch;
 import com.skillnet.serializedcoupon.domain.CouponBatchStatus;
+import com.skillnet.serializedcoupon.domain.CouponStatus;
 import com.skillnet.serializedcoupon.domain.RmsCouponDefinition;
 import com.skillnet.serializedcoupon.domain.SerializedCoupon;
 import com.skillnet.serializedcoupon.dto.CreateCouponBatchRequest;
 import com.skillnet.serializedcoupon.exception.BusinessValidationException;
 import com.skillnet.serializedcoupon.exception.CouponGenerationException;
 import com.skillnet.serializedcoupon.exception.RmsCouponInactiveException;
-import com.skillnet.serializedcoupon.exception.RmsCouponNotFoundException;
 import com.skillnet.serializedcoupon.integration.rms.RmsCouponClient;
 import com.skillnet.serializedcoupon.integration.rms.RmsCouponDetails;
 import com.skillnet.serializedcoupon.mapper.CouponMapper;
 import com.skillnet.serializedcoupon.repository.CouponBatchRepository;
-import com.skillnet.serializedcoupon.repository.RmsCouponDefinitionRepository;
 import com.skillnet.serializedcoupon.repository.SerializedCouponRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,13 +47,14 @@ import static org.mockito.Mockito.when;
 class CouponBatchServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-09-04T15:00:00Z");
+    private static final UUID COUPON_ID = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
     @Mock
     private CouponBatchRepository couponBatchRepository;
     @Mock
     private SerializedCouponRepository serializedCouponRepository;
     @Mock
-    private RmsCouponDefinitionRepository rmsCouponDefinitionRepository;
+    private CouponService couponService;
     @Mock
     private RmsCouponClient rmsCouponClient;
     @Mock
@@ -73,7 +74,7 @@ class CouponBatchServiceTest {
         service = new CouponBatchService(
                 couponBatchRepository,
                 serializedCouponRepository,
-                rmsCouponDefinitionRepository,
+                couponService,
                 rmsCouponClient,
                 couponCodeGenerator,
                 properties,
@@ -86,7 +87,7 @@ class CouponBatchServiceTest {
     @Test
     void createsExpectedNumberOfCoupons() {
         CreateCouponBatchRequest request = validRequest(5);
-        stubActiveRms();
+        stubActiveCoupon();
         UUID batchId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         when(couponBatchRepository.saveAndFlush(any())).thenAnswer(invocation -> {
             CouponBatch batch = invocation.getArgument(0);
@@ -133,54 +134,18 @@ class CouponBatchServiceTest {
     }
 
     @Test
-    void rejectsMissingRmsCoupon() {
-        when(rmsCouponClient.getCouponDefinition("MISSING")).thenReturn(Optional.empty());
-        CreateCouponBatchRequest request = new CreateCouponBatchRequest(
-                "MISSING", "1234", 1,
-                Instant.parse("2026-09-10T00:00:00Z"),
-                Instant.parse("2026-12-31T23:59:59Z"),
-                null
-        );
-        assertThatThrownBy(() -> service.createBatch(request, null))
-                .isInstanceOf(RmsCouponNotFoundException.class);
-    }
-
-    @Test
     void rejectsInactiveRmsCoupon() {
-        when(rmsCouponClient.getCouponDefinition("RMS-COUPON-INACTIVE")).thenReturn(Optional.of(
-                new RmsCouponDetails("RMS-COUPON-INACTIVE", "OLD99", "Retired", null, false)
+        stubCoupon();
+        when(rmsCouponClient.getCouponDefinition("RMS-COUPON-1001")).thenReturn(Optional.of(
+                new RmsCouponDetails("RMS-COUPON-1001", "OLD99", "Retired", null, false)
         ));
-        CreateCouponBatchRequest request = new CreateCouponBatchRequest(
-                "RMS-COUPON-INACTIVE", "1234", 1,
-                Instant.parse("2026-09-10T00:00:00Z"),
-                Instant.parse("2026-12-31T23:59:59Z"),
-                null
-        );
-        assertThatThrownBy(() -> service.createBatch(request, null))
+        assertThatThrownBy(() -> service.createBatch(validRequest(1), null))
                 .isInstanceOf(RmsCouponInactiveException.class);
     }
 
     @Test
-    void rejectsInvalidDateRange() {
-        CreateCouponBatchRequest request = new CreateCouponBatchRequest(
-                "RMS-COUPON-1001", "1234", 1,
-                Instant.parse("2026-12-31T00:00:00Z"),
-                Instant.parse("2026-09-10T00:00:00Z"),
-                null
-        );
-        assertThatThrownBy(() -> service.createBatch(request, null))
-                .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining("startAt");
-    }
-
-    @Test
     void rejectsQuantityAboveMaximum() {
-        CreateCouponBatchRequest request = new CreateCouponBatchRequest(
-                "RMS-COUPON-1001", "1234", 101,
-                Instant.parse("2026-09-10T00:00:00Z"),
-                Instant.parse("2026-12-31T23:59:59Z"),
-                null
-        );
+        CreateCouponBatchRequest request = new CreateCouponBatchRequest(COUPON_ID, 101, null);
         assertThatThrownBy(() -> service.createBatch(request, null))
                 .isInstanceOf(BusinessValidationException.class)
                 .hasMessageContaining("maximum");
@@ -205,37 +170,48 @@ class CouponBatchServiceTest {
     }
 
     private CreateCouponBatchRequest validRequest(int quantity) {
-        return new CreateCouponBatchRequest(
-                "RMS-COUPON-1001",
-                "1234",
-                quantity,
-                Instant.parse("2026-09-10T00:00:00Z"),
-                Instant.parse("2026-12-31T23:59:59Z"),
-                "FALL-2026-CAMPAIGN"
-        );
+        return new CreateCouponBatchRequest(COUPON_ID, quantity, "FALL-2026-CAMPAIGN");
     }
 
-    private void stubActiveRms() {
-        RmsCouponDetails details = new RmsCouponDetails("RMS-COUPON-1001", "FALL26", "Fall 2026 BOGO", "desc", true);
-        when(rmsCouponClient.getCouponDefinition("RMS-COUPON-1001")).thenReturn(Optional.of(details));
-        when(rmsCouponDefinitionRepository.findByRmsCouponId("RMS-COUPON-1001")).thenReturn(Optional.empty());
-        when(rmsCouponDefinitionRepository.save(any())).thenAnswer(invocation -> {
-            RmsCouponDefinition definition = invocation.getArgument(0);
-            definition.setId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
-            return definition;
-        });
+    private void stubActiveCoupon() {
+        stubCoupon();
+        when(rmsCouponClient.getCouponDefinition("RMS-COUPON-1001")).thenReturn(Optional.of(
+                new RmsCouponDetails("RMS-COUPON-1001", "FALL26", "Fall 2026 BOGO", "desc", true)
+        ));
     }
 
-    private CouponBatch sampleBatch(UUID batchId) {
+    private void stubCoupon() {
+        when(couponService.require(COUPON_ID)).thenReturn(sampleCoupon());
+    }
+
+    private Coupon sampleCoupon() {
+        RmsCouponDefinition rms = sampleRms();
+        Coupon coupon = new Coupon();
+        coupon.setId(COUPON_ID);
+        coupon.setRmsCouponDefinition(rms);
+        coupon.setCouponProgramCode("1234");
+        coupon.setStartAt(Instant.parse("2026-09-10T00:00:00Z"));
+        coupon.setExpiresAt(Instant.parse("2026-12-31T23:59:59Z"));
+        coupon.setStatus(CouponStatus.ACTIVE);
+        coupon.setExternalReference("FALL-2026-CAMPAIGN");
+        return coupon;
+    }
+
+    private RmsCouponDefinition sampleRms() {
         RmsCouponDefinition rms = new RmsCouponDefinition();
         rms.setId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
         rms.setRmsCouponId("RMS-COUPON-1001");
         rms.setRmsCouponCode("FALL26");
         rms.setName("Fall 2026 BOGO");
         rms.setActive(true);
+        return rms;
+    }
+
+    private CouponBatch sampleBatch(UUID batchId) {
         CouponBatch batch = new CouponBatch();
         batch.setId(batchId);
-        batch.setRmsCouponDefinition(rms);
+        batch.setCoupon(sampleCoupon());
+        batch.setRmsCouponDefinition(sampleRms());
         batch.setCouponProgramCode("1234");
         batch.setRequestedQuantity(5);
         batch.setGeneratedQuantity(5);

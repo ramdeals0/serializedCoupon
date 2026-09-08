@@ -17,6 +17,8 @@ public record SerializedCouponResponse(
         SerializedCouponStatus status,
         Instant redeemedAt,
         Instant deactivatedAt,
+        int timesUsed,
+        int usageLimit,
         String externalReference,
         Instant createdAt,
         Instant updatedAt

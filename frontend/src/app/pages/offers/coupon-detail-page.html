@@ -1,0 +1,35 @@
+<section class="page">
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Loading coupon…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (coupon(); as data) {
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Coupon</p>
+        <h1>{{ data.title }}</h1>
+      </div>
+      @if (data.status === 'ACTIVE') {
+        <a class="button primary" [routerLink]="['/coupons', data.id, 'batches', 'new']">Generate batch</a>
+      }
+    </header>
+
+    <p class="lede">This coupon is the offer definition. Serialized codes are created when you generate a batch.</p>
+
+    <dl class="meta-grid">
+      <div><dt>Coupon id</dt><dd><code>{{ data.id }}</code></dd></div>
+      <div><dt>Description</dt><dd>{{ data.description || '—' }}</dd></div>
+      <div><dt>Usage limit</dt><dd>{{ data.usageLimit }}</dd></div>
+      <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
+      <div><dt>POS code</dt><dd>{{ data.posCode || '—' }}</dd></div>
+      <div><dt>ATG code</dt><dd>{{ data.atgCode || '—' }}</dd></div>
+      <div>
+        <dt>Coupon source</dt>
+        <dd>{{ data.couponSource === 'ECOMM' ? 'Ecomm' : data.couponSource === 'BOTH' ? 'Both' : 'POS' }}</dd>
+      </div>
+      <div><dt>Status</dt><dd><span class="badge">{{ data.status }}</span></dd></div>
+      <div><dt>Start</dt><dd>{{ data.startAt | date: 'medium' }}</dd></div>
+      <div><dt>Expires</dt><dd>{{ data.expiresAt | date: 'medium' }}</dd></div>
+    </dl>
+  }
+</section>

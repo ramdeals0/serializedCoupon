@@ -1,0 +1,81 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Step 1</p>
+      <h1>Coupons</h1>
+    </div>
+    <a class="button primary" routerLink="/coupons/new">New coupon</a>
+  </header>
+
+  <p class="lede">Create a coupon first, then generate a serialized batch from it.</p>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load(0)">
+    <label>
+      RMS coupon ID
+      <input formControlName="rmsCouponId" type="search" />
+    </label>
+    <label>
+      Program code
+      <input formControlName="couponProgramCode" maxlength="4" inputmode="numeric" />
+    </label>
+    <label>
+      Status
+      <select formControlName="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+    <button class="button" type="submit">Filter</button>
+  </form>
+
+  @if (loading()) {
+    <p class="status" role="status" aria-live="polite">Loading coupons…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (page(); as data) {
+    @if (data.content.length === 0) {
+      <p class="empty">No coupons match the current filters.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Created</th>
+              <th>Title</th>
+              <th>Program</th>
+              <th>Window</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (coupon of data.content; track coupon.id) {
+              <tr>
+                <td>{{ coupon.createdAt | date: 'medium' }}</td>
+                <td>
+                  <a [routerLink]="['/coupons', coupon.id]">{{ coupon.title }}</a>
+                  <div class="muted">{{ coupon.couponSource === 'ECOMM' ? 'Ecomm' : coupon.couponSource === 'BOTH' ? 'Both' : 'POS' }}</div>
+                </td>
+                <td><code>{{ coupon.couponProgramCode }}</code></td>
+                <td>{{ coupon.startAt | date: 'short' }} – {{ coupon.expiresAt | date: 'short' }}</td>
+                <td><span class="badge">{{ coupon.status }}</span></td>
+                <td>
+                  @if (coupon.status === 'ACTIVE') {
+                    <a class="button" [routerLink]="['/coupons', coupon.id, 'batches', 'new']">Generate batch</a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button class="button" type="button" [disabled]="data.first" (click)="load(currentPage() - 1)">Previous</button>
+        <span>Page {{ data.page + 1 }} of {{ data.totalPages || 1 }}</span>
+        <button class="button" type="button" [disabled]="data.last" (click)="load(currentPage() + 1)">Next</button>
+      </div>
+    }
+  }
+</section>

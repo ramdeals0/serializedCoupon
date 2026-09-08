@@ -1,11 +1,13 @@
 package com.skillnet.serializedcoupon.service;
 
 import com.skillnet.serializedcoupon.config.CouponValidationProperties;
+import com.skillnet.serializedcoupon.domain.RmsCouponDefinition;
 import com.skillnet.serializedcoupon.domain.SerializedCoupon;
 import com.skillnet.serializedcoupon.domain.SerializedCouponStatus;
 import com.skillnet.serializedcoupon.domain.ValidationReason;
 import com.skillnet.serializedcoupon.dto.CouponValidationResponse;
 import com.skillnet.serializedcoupon.integration.rms.RmsCouponClient;
+import com.skillnet.serializedcoupon.integration.rms.RmsCouponDetails;
 import com.skillnet.serializedcoupon.repository.SerializedCouponRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,18 +93,18 @@ public class CouponValidationService {
     }
 
     private boolean isRmsActive(SerializedCoupon coupon) {
-        if (coupon.getRmsCouponDefinition() != null && !coupon.getRmsCouponDefinition().isActive()) {
+        RmsCouponDefinition local = coupon.getRmsCouponDefinition();
+        if (local != null && !local.isActive()) {
             return false;
         }
         if (!validationProperties.isRequireLiveRmsActive()) {
             return true;
         }
-        String rmsCouponId = coupon.getRmsCouponDefinition() == null
-                ? null
-                : coupon.getRmsCouponDefinition().getRmsCouponId();
-        if (rmsCouponId == null) {
+        if (local == null || local.getRmsCouponId() == null) {
             return false;
         }
-        return rmsCouponClient.couponDefinitionExistsAndIsActive(rmsCouponId);
+        return rmsCouponClient.getCouponDefinition(local.getRmsCouponId())
+                .map(RmsCouponDetails::active)
+                .orElse(true);
     }
 }

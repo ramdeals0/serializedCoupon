@@ -28,6 +28,7 @@ describe('BatchDetailPage', () => {
     const http = TestBed.inject(HttpTestingController);
     http.expectOne(`${environment.apiBaseUrl}/coupon-batches/batch-1`).flush({
       id: 'batch-1',
+      couponId: 'coupon-99',
       rmsCouponId: 'RMS-COUPON-1001',
       rmsCouponCode: 'FALL26',
       rmsCouponName: 'Fall 2026 BOGO',

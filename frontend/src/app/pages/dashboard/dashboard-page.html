@@ -4,7 +4,7 @@
       <p class="eyebrow">Operations</p>
       <h1>Serialized coupon dashboard</h1>
     </div>
-    <a class="button primary" routerLink="/coupon-batches/new">Create batch</a>
+    <a class="button primary" routerLink="/coupons/new">Create coupon</a>
   </header>
 
   @if (loading()) {
@@ -36,7 +36,7 @@
 
     <h2>Recent batches</h2>
     @if (data.recentBatches.length === 0) {
-      <p class="empty">No batches yet. Create a generation batch to get started.</p>
+      <p class="empty">No batches yet. Create a coupon, then generate a serialized batch.</p>
     } @else {
       <div class="table-wrap">
         <table>

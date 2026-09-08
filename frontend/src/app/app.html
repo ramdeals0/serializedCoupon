@@ -1,12 +1,45 @@
 <div class="app-shell">
   <header class="topbar">
-    <a class="brand" routerLink="/">Serialized Coupons</a>
-    <nav>
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
-      <a routerLink="/coupon-batches" routerLinkActive="active">Batches</a>
-      <a routerLink="/coupon-batches/new" routerLinkActive="active">Create</a>
-      <a routerLink="/serialized-coupons" routerLinkActive="active">Search</a>
-    </nav>
+    <a class="brand" [routerLink]="auth.isLoggedIn() ? auth.homePath() : '/'">
+      <img class="brand-logo" src="/brand/skillnet-logo-black.png" alt="SkillNet" />
+      <span class="brand-copy">
+        <span class="brand-name">SkillNet</span>
+        <span class="product-name">Serialized Coupons</span>
+      </span>
+    </a>
+    @if (auth.isLoggedIn()) {
+      <nav>
+        @if (auth.can('dashboard')) {
+          <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        }
+        @if (auth.can('create')) {
+          <a routerLink="/coupons" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Coupons</a>
+        }
+        @if (auth.can('batches')) {
+          <a routerLink="/coupon-batches" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Batches</a>
+        }
+        @if (auth.can('create')) {
+          <a routerLink="/coupons/new" routerLinkActive="active">Create</a>
+        }
+        @if (auth.can('search')) {
+          <a routerLink="/serialized-coupons" routerLinkActive="active">Search</a>
+        }
+        <a routerLink="/pos-demo" routerLinkActive="active">POS demo</a>
+      </nav>
+      <div class="session">
+        <span class="session-name">{{ auth.displayName() }}</span>
+        <span class="session-role">{{ auth.role() }}</span>
+        <button class="button" type="button" (click)="logout()">Sign out</button>
+      </div>
+    } @else {
+      <nav>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
+        <a routerLink="/pos-demo" routerLinkActive="active">POS demo</a>
+      </nav>
+      <div class="session">
+        <a class="button primary" routerLink="/login">Sign in</a>
+      </div>
+    }
   </header>
 
   @if (notifications.notice(); as notice) {
@@ -16,7 +49,15 @@
     </div>
   }
 
-  <main>
+  <main [class.login-main]="!auth.isLoggedIn()">
     <router-outlet />
   </main>
+
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <img class="footer-logo" src="/brand/skillnet-logo-black.png" alt="SkillNet" />
+      <p class="footer-tagline">Makers of Modern Commerce</p>
+    </div>
+    <p>© SkillNet {{ year }} · Internal serialized coupon operations</p>
+  </footer>
 </div>

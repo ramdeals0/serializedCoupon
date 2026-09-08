@@ -8,6 +8,7 @@
       <div>
         <p class="eyebrow">Batch {{ data.id }}</p>
         <h1>{{ data.rmsCouponName }}</h1>
+        <p class="hint">CSV export contains serialized coupon codes and expiration dates only.</p>
       </div>
       <button class="button" type="button" (click)="exportCsv()" [disabled]="exporting()">
         {{ exporting() ? 'Exporting…' : 'Export CSV' }}
@@ -15,6 +16,9 @@
     </header>
 
     <dl class="meta-grid">
+      @if (data.couponId) {
+        <div><dt>Coupon</dt><dd><a [routerLink]="['/coupons', data.couponId]"><code>{{ data.couponId }}</code></a></dd></div>
+      }
       <div><dt>RMS coupon</dt><dd>{{ data.rmsCouponId }} / {{ data.rmsCouponCode || '—' }}</dd></div>
       <div><dt>Program code</dt><dd><code>{{ data.couponProgramCode }}</code></dd></div>
       <div><dt>Generated</dt><dd>{{ data.generatedQuantity }} / {{ data.requestedQuantity }}</dd></div>

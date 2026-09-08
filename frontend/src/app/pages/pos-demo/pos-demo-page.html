@@ -1,0 +1,119 @@
+<section class="page pos-demo">
+    <header class="page-header">
+    <div>
+      <p class="eyebrow">External POS / e-comm</p>
+      <h1>Coupon validate &amp; redeem demo</h1>
+    </div>
+  </header>
+
+  <p class="lede">
+    External systems call these APIs with an API key. Validate checks a serialized coupon without
+    changing it. Redeem validates and marks it used.
+  </p>
+
+  <dl class="meta-grid">
+    <div>
+      <dt>Mock demo URL</dt>
+      <dd><code>{{ demoPageUrl }}</code></dd>
+    </div>
+    <div>
+      <dt>Validate API</dt>
+      <dd><code>POST {{ validateUrl }}</code></dd>
+    </div>
+    <div>
+      <dt>Redeem API</dt>
+      <dd><code>POST {{ redeemUrl }}</code></dd>
+    </div>
+    <div>
+      <dt>Auth header</dt>
+      <dd><code>X-Api-Key: {{ apiKey }}</code></dd>
+    </div>
+  </dl>
+
+  <div class="split api-docs">
+    <article>
+      <h2>POST /external/coupons/validate</h2>
+      <p class="muted">Check-only. Does not increment usage or change status.</p>
+      <pre>{{ curl('validate') }}</pre>
+    </article>
+    <article>
+      <h2>POST /external/coupons/redeem</h2>
+      <p class="muted">Validates, then marks the coupon used when accepted.</p>
+      <pre>{{ curl('redeem') }}</pre>
+    </article>
+  </div>
+
+  <h2>Try a coupon code</h2>
+  <p class="hint">
+    Generate a code from Create coupon → Generate batch, then paste it here. A successful validate
+    leaves the coupon <strong>ACTIVE</strong>. A successful redeem marks it used.
+  </p>
+
+  <form class="form-card" [formGroup]="form" novalidate>
+    <label>
+      Coupon code
+      <input formControlName="couponCode" maxlength="14" spellcheck="false" autocomplete="off" />
+    </label>
+    @if (form.controls.couponCode.touched && form.controls.couponCode.invalid) {
+      <p class="field-error">Enter a 14-character code such as FF1234ABCD2345.</p>
+    }
+
+    <fieldset class="choice-set">
+      <legend>Channel</legend>
+      <div class="choice-row">
+        @for (channel of channels; track channel) {
+          <label class="choice">
+            <input type="radio" formControlName="channel" [value]="channel" />
+            {{ channel }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <label>
+      Location id (optional)
+      <input formControlName="locationId" maxlength="64" />
+    </label>
+    <label>
+      Reference (optional)
+      <input formControlName="reference" maxlength="128" />
+    </label>
+
+    <div class="actions">
+      <button class="button" type="button" (click)="validate()" [disabled]="submitting()">
+        {{ submitting() && lastAction() === 'validate' ? 'Validating…' : 'Validate' }}
+      </button>
+      <button class="button primary" type="button" (click)="redeem()" [disabled]="submitting()">
+        {{ submitting() && lastAction() === 'redeem' ? 'Redeeming…' : 'Validate and mark used' }}
+      </button>
+    </div>
+  </form>
+
+  @if (error(); as message) {
+    <div class="banner error" role="alert">{{ message }}</div>
+  }
+
+  @if (lastRequest(); as request) {
+    <div class="split">
+      <article>
+        <h2>Request ({{ lastAction() }})</h2>
+        <pre>{{ request | json }}</pre>
+      </article>
+      <article>
+        <h2>Response</h2>
+        @if (lastResponse(); as response) {
+          <p class="result" [class.accepted]="response.accepted" [class.rejected]="!response.accepted">
+            {{ response.accepted ? 'Accepted' : 'Not accepted' }}
+            · {{ response.validationReason }}
+            · markedUsed={{ response.markedUsed }}
+            · status={{ response.status }}
+            · used {{ response.timesUsed }}/{{ response.usageLimit }}
+          </p>
+          <pre>{{ response | json }}</pre>
+        } @else if (!error()) {
+          <p class="muted">Waiting for response…</p>
+        }
+      </article>
+    </div>
+  }
+</section>
